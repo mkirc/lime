@@ -15,35 +15,35 @@ TODO:
 void mallocAndSetDefaultGrid(struct grid **gp, const size_t numPoints, const size_t numSpecies){
   size_t i,j;
 
-  *gp = malloc(sizeof(**gp)*numPoints);
+  *gp = calloc(numPoints, sizeof(struct grid));
   for(i=0;i<numPoints; i++){
-    (*gp)[i].v1 = NULL;
-    (*gp)[i].v2 = NULL;
-    (*gp)[i].v3 = NULL;
-    (*gp)[i].dir = NULL;
-    (*gp)[i].neigh = NULL;
-    (*gp)[i].w = NULL;
-    (*gp)[i].ds = NULL;
-    (*gp)[i].dens=NULL;
+    /* (*gp)[i].v1 = NULL; */
+    /* (*gp)[i].v2 = NULL; */
+    /* (*gp)[i].v3 = NULL; */
+    /* (*gp)[i].dir = NULL; */
+    /* (*gp)[i].neigh = NULL; */
+    /* (*gp)[i].w = NULL; */
+    /* (*gp)[i].ds = NULL; */
+    /* (*gp)[i].dens=NULL; */
     (*gp)[i].t[0]=-1.0;
     (*gp)[i].t[1]=-1.0;
-    (*gp)[i].B[0]=0.0;
-    (*gp)[i].B[1]=0.0;
-    (*gp)[i].B[2]=0.0;
-    (*gp)[i].conv=0;
+    /* (*gp)[i].B[0]=0.0; */
+    /* (*gp)[i].B[1]=0.0; */
+    /* (*gp)[i].B[2]=0.0; */
+    /* (*gp)[i].conv=0; */
 
     if(numSpecies > 0){
-      (*gp)[i].mol = malloc(sizeof(*(*gp)[i].mol)*numSpecies);
-      for(j=0;j<numSpecies;j++){
-        (*gp)[i].mol[j].pops        = NULL;
-        (*gp)[i].mol[j].specNumDens = NULL;
-        (*gp)[i].mol[j].partner     = NULL;
-        (*gp)[i].mol[j].cont        = NULL;
-        (*gp)[i].mol[j].dopb = 0.0;
-        (*gp)[i].mol[j].binv = 0.0;
-        (*gp)[i].mol[j].nmol = 0.0;
-        (*gp)[i].mol[j].abun = 0.0;
-      }
+      (*gp)[i].mol = calloc(numSpecies, sizeof(struct populations));
+      /* for(j=0;j<numSpecies;j++){ */
+      /*   (*gp)[i].mol[j].pops        = NULL; */
+      /*   (*gp)[i].mol[j].specNumDens = NULL; */
+      /*   (*gp)[i].mol[j].partner     = NULL; */
+      /*   (*gp)[i].mol[j].cont        = NULL; */
+      /*   (*gp)[i].mol[j].dopb = 0.0; */
+      /*   (*gp)[i].mol[j].binv = 0.0; */
+      /*   (*gp)[i].mol[j].nmol = 0.0; */
+      /*   (*gp)[i].mol[j].abun = 0.0; */
+      /* } */
     }else
       (*gp)[i].mol = NULL;
   }

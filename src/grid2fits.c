@@ -539,6 +539,7 @@ Ok we have a bit of a tricky situation here in that the number of columns we wri
 
   /* Check if first DENSMOL column has info:
   */
+  printf("%d\n", dataFlags);
   colI = allColNumbers[getColIndex(allColNames, maxNumCols, "DENSMOL1")];
   if(colI>0){
     densm = malloc(sizeof(*densm)*totalNumGridPoints);
@@ -946,7 +947,7 @@ readKeywordsFromFITS(fitsfile *fptr, struct keywordType *kwds\
 void
 readGridExtFromFITS(fitsfile *fptr, struct gridInfoType *gridInfoRead\
   , struct grid **gp, unsigned int **firstNearNeigh, char ***collPartNames\
-  , int *numCollPartRead, int *dataFlags, _Bool *densMolColsExists){
+  , int *numCollPartRead, int *dataFlags, _Bool *densMolColsExists, size_t nSpecies){
   /*
 The present function mallocs 'gp' and sets defaults for all the simple or first-level struct elements.
 
@@ -987,8 +988,11 @@ Note that the calling routine needs to free gp, firstNearNeigh and collPartNames
   fits_get_colnum(fptr, CASEINSEN, "DENSMOL1", &colNum, &status);
   if(status==0)
     *densMolColsExists = TRUE;
-  else
-    processFitsError(status);
+  else {
+      status = 0;
+      printf("no densmol, must be datastage <=3\n");
+  }
+    /* processFitsError(status); */
 
   /* Count the numbers of ABUNMOLn/DENSMOLn columns to get the number of species:
   */
@@ -996,7 +1000,14 @@ Note that the calling routine needs to free gp, firstNearNeigh and collPartNames
     gridInfoRead->nSpecies = (unsigned short)countColsBasePlusInt(fptr, "DENSMOL");
   else
     gridInfoRead->nSpecies = (unsigned short)countColsBasePlusInt(fptr, "ABUNMOL");
-  mallocAndSetDefaultGrid(gp, (size_t)numGridCells, gridInfoRead->nSpecies);
+
+  if(gridInfoRead->nSpecies < nSpecies) {
+    mallocAndSetDefaultGrid(gp, (size_t)numGridCells, nSpecies);
+  } else {
+    mallocAndSetDefaultGrid(gp, (size_t)numGridCells, gridInfoRead->nSpecies);
+  }
+
+
 
   /* Read the columns.
   */
@@ -1068,9 +1079,12 @@ Note that the calling routine needs to free gp, firstNearNeigh and collPartNames
 
   gridInfoRead->nInternalPoints = numGridCells - gridInfoRead->nSinkPoints;
 
+  /* printf("All preflight checks ok\n"); */
+
   /* If we have made it this far, we can set the first bit of dataFlags. Woot!
   */
   (*dataFlags) |= (1 << DS_bit_x);
+
 
   fits_get_colnum(fptr, CASEINSEN, "NUMNEIGH", &colNum, &status);
   if(status!=COL_NOT_FOUND){
@@ -1102,8 +1116,7 @@ Note that the calling routine needs to free gp, firstNearNeigh and collPartNames
   /* See if there are any VEL columns:
   */
   status = 0;
-  sprintf(colName, "VEL1");
-  fits_get_colnum(fptr, CASEINSEN, colName, &colNum, &status);
+  fits_get_colnum(fptr, CASEINSEN, "VEL1", &colNum, &status);
   if(status!=COL_NOT_FOUND){
     processFitsError(status);
 
@@ -1125,6 +1138,10 @@ Note that the calling routine needs to free gp, firstNearNeigh and collPartNames
     free(velj);
 
     (*dataFlags) |= (1 << DS_bit_velocity);
+  } else {
+      printf("Flags: %d\n", *dataFlags);
+    printf("no vels, should be ok in datastage <= 3\n");
+    status =0;
   }
 
   /* Count the numbers of DENSITYn columns:
@@ -1294,6 +1311,7 @@ Note that the calling routine needs to free gp, firstNearNeigh and collPartNames
       processFitsError(status);
     }
   }
+  printf("Flags: %d\n", *dataFlags);
 }
 
 /*....................................................................*/

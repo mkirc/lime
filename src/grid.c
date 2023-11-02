@@ -53,10 +53,12 @@ exit(1);
   */
   if(gridInfoRead.nSinkPoints>0 && par->sinkPoints>0){
     if((int)gridInfoRead.nSinkPoints!=par->sinkPoints){
+      printf("Sinkpoints: %d %d\n", (int)gridInfoRead.nSinkPoints, par->sinkPoints);
       if(!silent) warning("par->sinkPoints will be overwritten");
     }
     if((int)gridInfoRead.nInternalPoints!=par->pIntensity){
       if(!silent) warning("par->pIntensity will be overwritten");
+      printf("Internal Points: %d %d\n", (int)gridInfoRead.nInternalPoints, par->pIntensity);
     }
   }
   par->sinkPoints = (int)gridInfoRead.nSinkPoints;
@@ -128,9 +130,25 @@ readGridWrapper(configInfo *par, struct grid **gp, char ***collPartNames\
   desiredKwds[i].datatype = lime_INT;
   snprintf(desiredKwds[i].keyname, STRLEN_KNAME, "NSOLITER");
 
+
+  printf("Par->nSpecies: %d\n", par->nSpecies);
+
+  /* size_t numMoldatfiles = 0; */
+  /* if(par->moldatfile != NULL){ */
+  /*     for(size_t i_files=0;i_files<MAX_NSPECIES;++i_files){ */
+  /*         if(!charPtrIsNullOrEmpty(par->moldatfile[i_files])) { */
+  /*             ++numMoldatfiles; */
+  /*         } else { */
+  /*             break; */
+  /*         } */
+  /*     } */
+  /* } */
+  /* /1* printf("Moldat file: %s\n", par->moldatfile[0]); *1/ */
+  /* printf("NumMoldatFiles: %zu\n", numMoldatfiles); */
+
   status = readGrid(par->gridInFile, &gridInfoRead, desiredKwds\
     , numDesiredKwds, gp, collPartNames, numCollPartRead\
-    , &(par->dataFlags), &densMolColsExists);
+    , &(par->dataFlags), &densMolColsExists, (size_t)par->nSpecies);
 
   par->radius          = desiredKwds[0].doubleValue;
   par->minScale        = desiredKwds[1].doubleValue;
@@ -368,6 +386,9 @@ exit(1);
   /* . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 Generate the grid point locations.
   */
+  printf("Flags: %d\n", par->dataFlags);
+  printf("X Mask: %d\n", DS_mask_x);
+  printf("Any bit set: %d\n", anyBitSet(par->dataFlags, DS_mask_x));
   if(!anyBitSet(par->dataFlags, DS_mask_x)){ /* This should only happen if we did not read a file. Generate the grid point locations. */
     mallocAndSetDefaultGrid(gp, (size_t)par->ncell, (size_t)par->nSpecies);
 
@@ -471,6 +492,7 @@ exit(1);
   }
 
   if(onlyBitsSet(par->dataFlags, DS_mask_1)) /* Only happens if (i) we read no file and have constructed this data within LIME, or (ii) we read a file at dataStageI==1. */
+    printf("datastage 1\n");
     writeGridIfRequired(par, *gp, NULL, 1);
 
   /* . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -492,6 +514,7 @@ Generate the remaining values if needed. **Note** that we check a few of them to
   distCalc(par, *gp); /* Mallocs and sets .dir & .ds, sets .nphot. We don't store these values so we have to calculate them whether we read a file or not. */
 
   if(onlyBitsSet(par->dataFlags, DS_mask_2)) /* Only happens if (i) we read no file and have constructed this data within LIME, or (ii) we read a file at dataStageI==2. */
+    printf("datastage 2\n");
     writeGridIfRequired(par, *gp, NULL, 2);
 
   if(!allBitsSet(par->dataFlags, DS_mask_density)){
@@ -534,6 +557,7 @@ exit(1);
   }
 
   if(onlyBitsSet(par->dataFlags, DS_mask_3)) /* Only happens if (i) we read no file and have constructed this data within LIME, or (ii) we read a file at dataStageI==3. */
+    printf("datastage 3\n");
     writeGridIfRequired(par, *gp, NULL, 3); /* Sufficient information for a continuum image. */
 
   if(par->doMolCalcs){
@@ -550,16 +574,19 @@ exit(1);
           for(si=0;si<par->nSpecies;si++){
             if(dummyPointer[si]<0.0){
               if(!silent) bail_out("You need to set abundances for all species in your model.");
-exit(1);
+              exit(1);
             }
           }
         }
 
+        puts("Segfault after here");
         for(i=0;i<par->pIntensity;i++){
           abundance((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],dummyPointer);
-          for(si=0;si<par->nSpecies;si++)
+          for(si=0;si<par->nSpecies;si++) {
             (*gp)[i].mol[si].abun = dummyPointer[si];
+          }
         }
+        puts("Segfault before here");
         for(i=par->pIntensity;i<par->ncell;i++){
           for(si=0;si<par->nSpecies;si++)
             (*gp)[i].mol[si].abun = 0.0;
@@ -574,7 +601,7 @@ exit(1);
           for(si=0;si<par->nSpecies;si++){
             if(dummyPointer[si]<0.0){
               if(!silent) bail_out("You need to set molNumDensity for all species in your model.");
-exit(1);
+              exit(1);
             }
           }
         }
@@ -607,7 +634,7 @@ exit(1);
       }
 
       for(i=0;i<par->pIntensity;i++)
-        doppler((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],&(*gp)[i].dopb_turb);	
+        doppler((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],&(*gp)[i].dopb_turb);
       for(i=par->pIntensity;i<par->ncell;i++)
         (*gp)[i].dopb_turb=0.;
 

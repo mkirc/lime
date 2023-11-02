@@ -34,7 +34,7 @@ To make things simpler, four stages have been defined at which the user may writ
 	DS_bit_abundance     		0		0		0		0		1		1
 	DS_bit_turb_doppler  		0		0		0		0		1		1
 	DS_bit_temperatures  		0		0		0		1		1		1
-	DS_bit_magfield  		0		0		0		x		x		x
+	DS_bit_magfield     		0		0		0		x		x		x
 	DS_bit_ACOEFF        		0		0		0		0		1		1
 	DS_bit_populations   		0		0		0		0		0		1
 	.....................................................................................................................
@@ -509,7 +509,7 @@ readKeywords(lime_fptr fptr\
 int
 _readGridTable(lime_fptr fptr, struct gridInfoType *gridInfoRead\
   , struct grid **gp, unsigned int **firstNearNeigh, char ***collPartNames\
-  , int *numCollPartRead, int *dataFlags, _Bool *densMolColsExists){
+  , int *numCollPartRead, int *dataFlags, _Bool *densMolColsExists, size_t nSpecies){
   /*
 Individual routines called should set the appropriate bits of dataFlags; also malloc gp and set all its defaults. (Note there is a bespoke routine grid.c:mallocAndSetDefaultGrid() to do the latter.)
   */
@@ -521,7 +521,7 @@ Individual routines called should set the appropriate bits of dataFlags; also ma
     , collPartNames, numCollPartRead, dataFlags, densMolColsExists);
 #else
   readGridExtFromFITS(fptr, gridInfoRead, gp, firstNearNeigh\
-    , collPartNames, numCollPartRead, dataFlags, densMolColsExists);
+    , collPartNames, numCollPartRead, dataFlags, densMolColsExists, nSpecies);
 #endif
 
   return status;
@@ -717,7 +717,7 @@ int
 readGrid(char *inFileName, struct gridInfoType *gridInfoRead\
   , struct keywordType *primaryKwds, const int numKeywords\
   , struct grid **gp, char ***collPartNames, int *numCollPartRead\
-  , int *dataFlags, _Bool *densMolColsExists){
+  , int *dataFlags, _Bool *densMolColsExists, size_t nSpecies){
 
   /*
 This is designed to be a generic function to read the grid data from file. It is assumed that the data will be stored in several tables of different size, corresponding to the different dimensionalities of the elements of the 'grid' struct. See 'writeGrid' for a description.
@@ -767,7 +767,7 @@ NOTE that collPartNames and its components must be freed after use.
   /* Read the values which should be in grid for every stage.
   */
   status = _readGridTable(fptr, gridInfoRead, gp, &firstNearNeigh\
-    , collPartNames, numCollPartRead, dataFlags, densMolColsExists); /* Sets appropriate bits of dataFlags; also mallocs gp and sets all its defaults. */
+    , collPartNames, numCollPartRead, dataFlags, densMolColsExists, nSpecies); /* Sets appropriate bits of dataFlags; also mallocs gp and sets all its defaults. */
   totalNumGridPoints = gridInfoRead->nSinkPoints + gridInfoRead->nInternalPoints;
   if(status){
     closeAndFree(fptr, firstNearNeigh, nnLinks, links, 0);
@@ -857,6 +857,7 @@ NOTE that collPartNames and its components must be freed after use.
     freeGrid(totalNumGridPoints, gridInfoRead->nSpecies, *gp);
     return 12;
   }
+
 
   if(numTables>0){
     (*dataFlags) |= (1 << DS_bit_populations);
