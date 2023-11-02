@@ -103,7 +103,13 @@ _convertKwdDataTypesToHDF5(struct keywordType *kwds, const int numKeywords){
   int i;
   char message[80];
 
+  /* printf("H5T_NATIVE_CHAR: %d\n", H5T_NATIVE_CHAR); */
+  /* printf("H5T_NATIVE_INt: %d\n", H5T_NATIVE_INT); */
+  /* printf("H5T_NATIVE_FLOTA: %d\n", H5T_NATIVE_FLOAT); */
+  /* printf("H5T_NATIVE_DOUBLE: %d\n", H5T_NATIVE_DOUBLE); */
+
   for(i=0;i<numKeywords;i++){
+    /* printf("Lime datatype: %d\n", kwds[i].datatype); */
     if(     kwds[i].datatype==lime_CHAR)
       kwds[i].datatype = H5T_NATIVE_CHAR;
     else if(kwds[i].datatype==lime_INT)
@@ -141,46 +147,47 @@ writeKeywordsToHDF5(hid_t parent, struct keywordType *kwds\
   kwdSpace = H5Screate(H5S_SCALAR);
 
   for(i=0;i<numKeywords;i++){
-    if(kwds[i].datatype==H5T_NATIVE_CHAR){
-      datatype = H5Tcopy(H5T_C_S1);
-      status = H5Tset_size(datatype, 1+strlen(kwds[i].charValue));
-//*** test status
-      status = H5Tset_strpad(datatype, H5T_STR_NULLTERM);
-//*** test status
-      kwdAttr = H5Acreate(parent, kwds[i].keyname, datatype, kwdSpace, H5P_DEFAULT, H5P_DEFAULT);
-    }else
-      kwdAttr = H5Acreate(parent, kwds[i].keyname, kwds[i].datatype, kwdSpace, H5P_DEFAULT, H5P_DEFAULT);
-
-    if(     kwds[i].datatype==H5T_NATIVE_CHAR)
-      status = H5Awrite(kwdAttr, datatype, kwds[i].charValue); /* datatype is correct here, **NOT** kwds[i].datatype */
-    else if(kwds[i].datatype==H5T_NATIVE_INT)
-      status = H5Awrite(kwdAttr, kwds[i].datatype, &kwds[i].intValue); 
-    else if(kwds[i].datatype==H5T_NATIVE_FLOAT)
-      status = H5Awrite(kwdAttr, kwds[i].datatype, &kwds[i].floatValue); 
-    else if(kwds[i].datatype==H5T_NATIVE_DOUBLE)
-      status = H5Awrite(kwdAttr, kwds[i].datatype, &kwds[i].doubleValue); 
-    else{
-      if(!silent){
-        sprintf(message, "Keyword %d dataype %d is not currently accepted.", i, kwds[i].datatype);
-        bail_out(message);
+      if(kwds[i].datatype==(int)H5T_NATIVE_CHAR) {
+          datatype = H5Tcopy(H5T_C_S1);
+          status = H5Tset_size(datatype, 1+strlen(kwds[i].charValue));
+          status = H5Tset_strpad(datatype, H5T_STR_NULLTERM);
+          kwdAttr = H5Acreate(parent, kwds[i].keyname, datatype, kwdSpace, H5P_DEFAULT, H5P_DEFAULT);
+          status = H5Awrite(kwdAttr, datatype, kwds[i].charValue);
       }
-      exit(1);
-    }
-//*** test status
+      else if(kwds[i].datatype==(int)H5T_NATIVE_INT) {
+          kwdAttr = H5Acreate(parent, kwds[i].keyname, H5T_NATIVE_INT, kwdSpace, H5P_DEFAULT, H5P_DEFAULT);
+          status = H5Awrite(kwdAttr, H5T_NATIVE_INT, &kwds[i].intValue);
+      }
+      else if(kwds[i].datatype==(int)H5T_NATIVE_FLOAT) {
+          kwdAttr = H5Acreate(parent, kwds[i].keyname, H5T_NATIVE_FLOAT, kwdSpace, H5P_DEFAULT, H5P_DEFAULT);
+          status = H5Awrite(kwdAttr, H5T_NATIVE_FLOAT, &kwds[i].floatValue);
+      }
+      else if(kwds[i].datatype==(int)H5T_NATIVE_DOUBLE) {
+          kwdAttr = H5Acreate(parent, kwds[i].keyname, H5T_NATIVE_DOUBLE, kwdSpace, H5P_DEFAULT, H5P_DEFAULT);
+          status = H5Awrite(kwdAttr, H5T_NATIVE_DOUBLE, &kwds[i].doubleValue);
+      }
+      else{
+          if(!silent){
+              sprintf(message, "Keyword %d dataype %d is not currently accepted.", i, kwds[i].datatype);
+              bail_out(message);
+          }
+          exit(1);
+      }
+      //*** test status
 
-    if(kwds[i].datatype==H5T_NATIVE_CHAR){
-      status = H5Tclose(datatype);
-//*** test status
-    }
+      if(kwds[i].datatype==H5T_NATIVE_CHAR){
+          status = H5Tclose(datatype);
+          //*** test status
+      }
 
-    /* Close attribute. */
-    status = H5Aclose(kwdAttr);
-//*** test status
+      /* Close attribute. */
+      status = H5Aclose(kwdAttr);
+      //*** test status
   }
 
   /* Close attribute dataspace. */
-  status = H5Sclose(kwdSpace); 
-//*** test status
+  status = H5Sclose(kwdSpace);
+  //*** test status
 
 }
 
@@ -451,6 +458,7 @@ _writeKwdsToHDF5Col(hid_t dset, const int colI, char *colName, char *colUnit){
   sprintf(kwds[i].keyname, "COL_NAME");
   strcpy(kwds[i].charValue, colName);
 
+  /* printf("dataset\n\n\n"); */
   writeKeywordsToHDF5(dset, kwds, numKwds);
   freeKeywords(kwds, numKwds);
 }
@@ -458,7 +466,7 @@ _writeKwdsToHDF5Col(hid_t dset, const int colI, char *colName, char *colUnit){
 /*....................................................................*/
 void
 _setUpHDF5Column(hid_t dataGroup, char *colName, const unsigned int numEntries\
-  , const int dataType, hid_t *space, hid_t *dset){
+  , hid_t dataType, hid_t *space, hid_t *dset){
 
   hsize_t dims[1] = {(hsize_t)numEntries};
 
@@ -652,10 +660,13 @@ Ok we have a bit of a tricky situation here in that the number of columns we wri
   ids = malloc(sizeof(*ids)*totalNumGridPoints);
   for(i_ui=0;i_ui<totalNumGridPoints;i_ui++)
     ids[i_ui] = (unsigned int)gp[i_ui].id;
+  /* puts("before writing ids"); */
   status = _writeColumnToHDF5_ui(dataGroup, colI, "ID", colUnits[colI-1], totalNumGridPoints, ids);
   free(ids);
+  /* puts("after writing ids."); */
 
   xj = malloc(sizeof(*xj)*totalNumGridPoints);
+  /* puts("before writing X_js"); */
   for(i_us=0;i_us<gridInfo.nDims;i_us++){
     sprintf(colName, "X%d", (int)i_us+1);
     colI = allColNumbers[_getColIndex(allColNames, maxNumCols, colName)];
@@ -669,12 +680,14 @@ Ok we have a bit of a tricky situation here in that the number of columns we wri
     status = _writeColumnToHDF5_double(dataGroup, colI, colName, colUnits[colI-1], totalNumGridPoints, xj);
   }
   free(xj);
+  /* puts("after writing X_js."); */
 
   colI = allColNumbers[_getColIndex(allColNames, maxNumCols, "IS_SINK")];
   if(colI<=0){
     if(!silent) bail_out("This should not occur, it is some sort of bug.");
     exit(1);
   }
+  /* puts("before writing Sinks"); */
   sink = malloc(sizeof(*sink)*totalNumGridPoints);
   for(i_ui=0;i_ui<totalNumGridPoints;i_ui++)
     sink[i_ui] = (_Bool)gp[i_ui].sink;
@@ -816,6 +829,7 @@ Ok we have a bit of a tricky situation here in that the number of columns we wri
   sprintf(kwds[i].keyname, "CLASS");
   sprintf(kwds[i].charValue, "DATA_GROUP");
 
+  /* puts("datagroup\n\n\n"); */
   writeKeywordsToHDF5(dataGroup, kwds, numKwds);
   freeKeywords(kwds, numKwds);
 
@@ -862,6 +876,7 @@ Ok we have a bit of a tricky situation here in that the number of columns we wri
     strcpy(kwds[i].charValue, collPartNames[i_us]);
   }
 
+  /* puts("hdugroup\n\n\n"); */
   writeKeywordsToHDF5(hduGroup, kwds, numKwds);
   freeKeywords(kwds, numKwds);
 
@@ -1362,10 +1377,15 @@ Note that the calling routine needs to free gp, firstNearNeigh and collPartNames
   /* Find out how many rows there are, then malloc the array.
   */
   dset = H5Dopen(dataGroup, "ID", H5P_DEFAULT);
+  if(dset<0){
+    if(!silent) bail_out("ID column numSpaceDims<0");
+    exit(1);
+  }
 //*** test and error if return <0.
   space = H5Dget_space(dset);
   numSpaceDims = H5Sget_simple_extent_dims(space, spaceDims, maxSpaceDims);
   status = H5Sclose(space);
+  printf("%s\n" , status);
 //*** check status?
 
   if(numSpaceDims<0){
@@ -1395,6 +1415,7 @@ Note that the calling routine needs to free gp, firstNearNeigh and collPartNames
     return; /* I.e. with dataFlags left unchanged. */
   }
 
+  printf("First Error after that\n");
   /* Find out if the user has supplied ABUNMOLn or DENSMOLn columns.
   */
   *densMolColsExists = FALSE;
@@ -1402,6 +1423,7 @@ Note that the calling routine needs to free gp, firstNearNeigh and collPartNames
   if(dset==0)
     *densMolColsExists = TRUE;
   status = H5Dclose(dset);
+  printf("Second Error after that\n");
 
   /* Count the numbers of ABUNMOLn/DENSMOLn columns to get the number of species:
   */
@@ -1435,6 +1457,7 @@ Note that the calling routine needs to free gp, firstNearNeigh and collPartNames
 
   /* We have to do this here (as well after the call to readGrid()) because grid.x is a pre-sized array rather than a pointer we can malloc. Later this should be changed to allow us to define the sizes of all arrays in grid purely from the data in the file.
   */
+  printf("Second error before that\n");
   if(gridInfoRead->nDims!=DIM){
     if(!silent){
       sprintf(message, "%d Xn columns read, but there should be %d.", (int)gridInfoRead->nDims, DIM);
