@@ -96,8 +96,11 @@ export WORKDIR=$PWD
 
 # Compile the code
 pushd ${PATHTOLIME} >> /dev/null
-make -s EXTRACPPFLAGS="${cpp_flags}" MODELS=$WORKDIR/$1 TARGET=$WORKDIR/lime_$$.x DOTEST=$do_test VERBOSE=$verbose
-# USEHDF5="yes"
+make -s EXTRACPPFLAGS="${cpp_flags}" \
+    MODELS=$WORKDIR/$1 \
+    TARGET=$WORKDIR/lime_$$.x \
+    DOTEST=$do_test \
+    VERBOSE=$verbose # USEHDF5="yes"
 make -s limeclean
 
 # Run the code
