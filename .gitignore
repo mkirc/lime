@@ -1,5 +1,6 @@
 # Ignore backups
 *~
+**.bak
 
 # Ignore MacOS files
 .DS_Store
@@ -15,3 +16,9 @@ example/vlog.txt
 
 # Ignore html doc files
 doc/*.html
+
+# Swap files
+**.swp
+
+# Makefile.def
+**/Makefile.defs
