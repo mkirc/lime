@@ -13,15 +13,15 @@
 /*....................................................................*/
 void
 pywarning(char *message){
-  if(!silent) warning(message);
-  Py_Exit(1);
+    if(!silent) warning(message);
+    Py_Exit(1);
 }
 
 /*....................................................................*/
 void
 pyerror(char *message){
-  if(!silent) bail_out(message);
-  Py_Exit(1);
+    if(!silent) bail_out(message);
+    Py_Exit(1);
 }
 
 

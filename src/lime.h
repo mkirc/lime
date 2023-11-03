@@ -109,94 +109,94 @@
 #include "defaults.h" /* includes lime_config.h */
 
 struct cpData {
-  double *down,*temp;
-  int collPartId,ntemp,ntrans,*lcl,*lcu,densityIndex;
-  char *name;
+    double *down,*temp;
+    int collPartId,ntemp,ntrans,*lcl,*lcu,densityIndex;
+    char *name;
 };
 
 /* Molecular data: shared attributes */
 typedef struct {
-  int nlev,nline,npart;
-  int *lal,*lau;
-  double *aeinst,*freq,*beinstu,*beinstl,*eterm,*gstat,*gir;
-  double *cmb,amass;
-  struct cpData *part;
-  char molName[80];
+    int nlev,nline,npart;
+    int *lal,*lau;
+    double *aeinst,*freq,*beinstu,*beinstl,*eterm,*gstat,*gir;
+    double *cmb,amass;
+    struct cpData *part;
+    char molName[80];
 } molData;
 
 struct point {
-  double x[DIM];
-  double xn[DIM];
+    double x[DIM];
+    double xn[DIM];
 };
 
 struct rates {
-  int t_binlow;
-  double interp_coeff;
+    int t_binlow;
+    double interp_coeff;
 };
 
 struct continuumLine{
-  double dust, knu;
+    double dust, knu;
 };
 
 struct populations {
-  double *pops,*specNumDens;
-  double dopb,binv,nmol,abun;
-  struct rates *partner;
-  struct continuumLine *cont;
+    double *pops,*specNumDens;
+    double dopb,binv,nmol,abun;
+    struct rates *partner;
+    struct continuumLine *cont;
 };
 
 /* Grid properties */
 struct grid {
-  int id;
-  double x[DIM], vel[DIM], B[3]; /* B field only makes physical sense in 3 dimensions. */
-  double *v1,*v2,*v3;
-  int numNeigh;
-  struct point *dir;
-  struct grid **neigh;
-  double *w;
-  int sink;
-  int nphot;
-  int conv;
-  double *dens,t[2],dopb_turb;
-  double *ds;
-  struct populations *mol;
-  struct continuumLine cont;
+    int id;
+    double x[DIM], vel[DIM], B[3]; /* B field only makes physical sense in 3 dimensions. */
+    double *v1,*v2,*v3;
+    int numNeigh;
+    struct point *dir;
+    struct grid **neigh;
+    double *w;
+    int sink;
+    int nphot;
+    int conv;
+    double *dens,t[2],dopb_turb;
+    double *ds;
+    struct populations *mol;
+    struct continuumLine cont;
 };
 
 struct spec {
-  double *intense;
-  double *tau;
-  double stokes[3];
-  int numRays;
+    double *intense;
+    double *tau;
+    double stokes[3];
+    int numRays;
 };
 
 /* Image information */
 typedef struct {
-  int doline;
-  int nchan,trans,molI;
-  struct spec *pixel;
-  double velres;
-  double imgres;
-  int pxls;
-  char *units;
-  int *imgunits;
-  int numunits;
-  double freq,bandwidth;
-  char *filename;
-  double source_vel;
-  double theta,phi,incl,posang,azimuth;
-  double distance;
-  double rotMat[3][3];
-  _Bool doInterpolateVels;
+    int doline;
+    int nchan,trans,molI;
+    struct spec *pixel;
+    double velres;
+    double imgres;
+    int pxls;
+    char *units;
+    int *imgunits;
+    int numunits;
+    double freq,bandwidth;
+    char *filename;
+    double source_vel;
+    double theta,phi,incl,posang,azimuth;
+    double distance;
+    double rotMat[3][3];
+    _Bool doInterpolateVels;
 } imageInfo;
 
 /* NOTE that it is assumed that vertx[i] is opposite the face that abuts with neigh[i] for all i.
 */ 
 struct cell {
-  struct grid *vertx[DIM+1];
-  struct cell *neigh[DIM+1]; /* ==NULL flags an external face. */
-  unsigned long id;
-  double centre[DIM];
+    struct grid *vertx[DIM+1];
+    struct cell *neigh[DIM+1]; /* ==NULL flags an external face. */
+    unsigned long id;
+    double centre[DIM];
 };
 
 /* Some global variables */

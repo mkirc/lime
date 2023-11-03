@@ -20,11 +20,11 @@
 
 void
 _defineAndLoadColumns(struct gridInfoType gridInfo\
-  , const int dataFlags, const unsigned short numColNameChars, char ***allColNames, int **allColNumbers\
-  , int *maxNumCols, int *numValidCols, int **colDataTypes, char ***colUnits);
+        , const int dataFlags, const unsigned short numColNameChars, char ***allColNames, int **allColNumbers\
+        , int *maxNumCols, int *numValidCols, int **colDataTypes, char ***colUnits);
 herr_t
 _writeColumnToHDF5_ui(hid_t dataGroup, const int colI, char *colName\
-  , char *colUnit, const unsigned int numEntries, unsigned int *colValues);
+        , char *colUnit, const unsigned int numEntries, unsigned int *colValues);
 int
 _getColIndex(char **allColNames, const int maxNumCols, char *colName);
 

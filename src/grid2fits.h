@@ -6,14 +6,14 @@
  *  Copyright (C) 2015-2017 The LIME development team
  *
 
-NOTE! This file is not stand-alone, in needs to be included in an environment which defines (on top of the usual types) the following data types:
-  fitsfile
-  struct gridInfoType
-  struct grid
-  struct keywordType
-  struct linkType
+ NOTE! This file is not stand-alone, in needs to be included in an environment which defines (on top of the usual types) the following data types:
+ fitsfile
+ struct gridInfoType
+ struct grid
+ struct keywordType
+ struct linkType
 
- */
+*/
 
 #ifndef GRID2FITS_H
 #define GRID2FITS_H

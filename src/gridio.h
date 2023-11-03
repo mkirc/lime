@@ -27,34 +27,34 @@
 #define lime_BOOL	4
 
 struct linkType {
-  unsigned int id, gis[2];
-  double *vels;
+    unsigned int id, gis[2];
+    double *vels;
 };
 
 struct molInfoType{
-  char *molName;
-  int nLevels, nLines;
+    char *molName;
+    int nLevels, nLines;
 };
 
 struct gridInfoType{
-  unsigned int nInternalPoints, nSinkPoints, nLinks, nNNIndices;
-  unsigned short nDims, nSpecies, nDensities, nLinkVels;
-  struct molInfoType *mols;
+    unsigned int nInternalPoints, nSinkPoints, nLinks, nNNIndices;
+    unsigned short nDims, nSpecies, nDensities, nLinkVels;
+    struct molInfoType *mols;
 };
 
 struct keywordType{
-  int datatype; /* Codes given above. */
-  char *keyname,*comment,*charValue;
-  int intValue;
-  float floatValue;
-  double doubleValue;
-  _Bool boolValue;
+    int datatype; /* Codes given above. */
+    char *keyname,*comment,*charValue;
+    int intValue;
+    float floatValue;
+    double doubleValue;
+    _Bool boolValue;
 };
 
 #if defined(lime_IO) && lime_IO==lime_HDF5
-  #include "grid2hdf5.h"
+#include "grid2hdf5.h"
 #else
-  #include "grid2fits.h"
+#include "grid2fits.h"
 #endif
 
 void	initializeKeyword(struct keywordType*);

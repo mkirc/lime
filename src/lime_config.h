@@ -30,23 +30,23 @@
 extern int silent;
 
 typedef struct {
-  /* Elements also present in struct inpars: */
-  double radius,minScale,tcmb,*nMolWeights;
-  double (*gridDensMaxLoc)[DIM],*gridDensMaxValues,*collPartMolWeights;
-  int sinkPoints,pIntensity,blend,*collPartIds,traceRayAlgorithm,samplingAlgorithm;
-  int sampling,lte_only,init_lte,antialias,polarization,nThreads,nSolveIters;
-  int collPartUserSetFlags;
-  char **girdatfile,**moldatfile,**collPartNames;
-  char *outputfile,*binoutputfile,*gridfile,*pregrid,*restart,*dust;
-  char *gridInFile,**gridOutFiles;
-  _Bool resetRNG,doSolveRTE;
+    /* Elements also present in struct inpars: */
+    double radius,minScale,tcmb,*nMolWeights;
+    double (*gridDensMaxLoc)[DIM],*gridDensMaxValues,*collPartMolWeights;
+    int sinkPoints,pIntensity,blend,*collPartIds,traceRayAlgorithm,samplingAlgorithm;
+    int sampling,lte_only,init_lte,antialias,polarization,nThreads,nSolveIters;
+    int collPartUserSetFlags;
+    char **girdatfile,**moldatfile,**collPartNames;
+    char *outputfile,*binoutputfile,*gridfile,*pregrid,*restart,*dust;
+    char *gridInFile,**gridOutFiles;
+    _Bool resetRNG,doSolveRTE;
 
-  /* New elements: */
-  double radiusSqu,minScaleSqu,taylorCutoff,gridDensGlobalMax;
-  int ncell,nImages,nSpecies,numDensities,doPregrid,numGridDensMaxima,numDims;
-  int nLineImages,nContImages,dataFlags,nSolveItersDone;
-  _Bool doInterpolateVels,useAbun,doMolCalcs;
-  _Bool writeGridAtStage[NUM_GRID_STAGES],useVelFuncInRaytrace,edgeVelsAvailable;
+    /* New elements: */
+    double radiusSqu,minScaleSqu,taylorCutoff,gridDensGlobalMax;
+    int ncell,nImages,nSpecies,numDensities,doPregrid,numGridDensMaxima,numDims;
+    int nLineImages,nContImages,dataFlags,nSolveItersDone;
+    _Bool doInterpolateVels,useAbun,doMolCalcs;
+    _Bool writeGridAtStage[NUM_GRID_STAGES],useVelFuncInRaytrace,edgeVelsAvailable;
 } configInfo;
 
 #endif /* LIME_CONFIG_H */

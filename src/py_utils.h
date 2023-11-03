@@ -20,28 +20,28 @@
 #define UFUNC_BUFFER_SIZE       100
 
 typedef struct {
-  char name[PY_MAX_LEN_PAR_NAME+1], type[PY_MAX_LEN_PAR_TYPE+1];
-  _Bool mandatory,isList;
+    char name[PY_MAX_LEN_PAR_NAME+1], type[PY_MAX_LEN_PAR_TYPE+1];
+    _Bool mandatory,isList;
 } parTemplateType;
 
 struct tempType{
-  int intValue;
-  double doubleValue;
-  char strValue[PY_STR_LEN_0+1];
-  _Bool boolValue,isNone;
+    int intValue;
+    double doubleValue;
+    char strValue[PY_STR_LEN_0+1];
+    _Bool boolValue,isNone;
 };
 
 extern PyObject *pMacros_global;
 
 extern PyObject *pDensity,\
-                *pTemperature,\
-                *pAbundance,\
-                *pMolNumDensity,\
-                *pDoppler,\
-                *pVelocity,\
-                *pMagfield,\
-                *pGasIIdust,\
-                *pGridDensity;
+           *pTemperature,\
+           *pAbundance,\
+           *pMolNumDensity,\
+           *pDoppler,\
+           *pVelocity,\
+           *pMagfield,\
+           *pGasIIdust,\
+           *pGridDensity;
 
 extern PyObject *pModule_global;
 
@@ -61,7 +61,7 @@ void	setUpUserPythonFuncs(PyObject *pModule);
 void	setUpUserPythonFuncs_new(void);
 void	decrefAllUserFuncs(void);
 int	userFuncWrapper(PyObject *pFunc, const char *funcName\
-  , double x, double y, double z, double *resultBuffer, int *numElemInUserFuncReturn);
+        , double x, double y, double z, double *resultBuffer, int *numElemInUserFuncReturn);
 
 void	pyFreeInputImgPars(image *inimg, int nImages);
 

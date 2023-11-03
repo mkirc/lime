@@ -5,13 +5,13 @@
  *  Copyright (C) 2006-2014 Christian Brinch
  *  Copyright (C) 2015-2017 The LIME development team
  *
-Files which include this must
-  - define a struct named configInfo which has members as follows:
-      double radiusSqu;
-      double gridDensGlobalMax;
-      int numDensities;
+ Files which include this must
+ - define a struct named configInfo which has members as follows:
+ double radiusSqu;
+ double gridDensGlobalMax;
+ int numDensities;
 
-  - define macros USERFUNC_* as used in defaults.c.
+ - define macros USERFUNC_* as used in defaults.c.
  */
 
 #ifndef DEFAULTS_H
