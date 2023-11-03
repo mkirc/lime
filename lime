@@ -23,6 +23,7 @@ function usage {
     echo "Options:"
     echo "   -V           Display version information"
     echo "   -h           Display this message"
+    echo "   -5           Compile with hdf5 support"
     echo "   -f           Use fast exponential computation"
     echo "   -s           Suppress output messages"
     echo "   -t           Compile with debugging and fixed RNG seeds"
@@ -37,10 +38,11 @@ function tip {
     echo "Try 'lime -h' for more information."
 }
 
-options=":Vfnstp:h"
+options=":Vf5nstp:h"
 cpp_flags=""
 verbose="yes"
 do_test="no"
+usehdf5="no"
 
 while getopts ${options} opt; do
     case $opt in
@@ -52,6 +54,9 @@ while getopts ${options} opt; do
 	    usage
 	    exit 0
 	    ;;
+    5)
+        usehdf5="yes"
+        ;;
 	f)
 	    cpp_flags+="-DFASTEXP "
 	    ;;
@@ -100,7 +105,8 @@ make -s EXTRACPPFLAGS="${cpp_flags}" \
     MODELS=$WORKDIR/$1 \
     TARGET=$WORKDIR/lime_$$.x \
     DOTEST=$do_test \
-    VERBOSE=$verbose # USEHDF5="yes"
+    VERBOSE=$verbose \
+    USEHDF5=$usehdf5
 make -s limeclean
 
 # Run the code
