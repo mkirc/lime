@@ -5,7 +5,7 @@ defsfile="/lime/Makefile.defs"
 [ -e $defsfile ] && rm $defsfile
 touch $defsfile
 
-echo "LIB_QHULL = qhullstatic" >> $defsfile
+echo "LIB_QHULL = qhull" >> $defsfile
 
 qhull_incs=( "/usr/include/libqhull" "/usr/include/qhull" "/opt/local/include/qhull" )
 
@@ -45,7 +45,7 @@ command -v $pyconf >/dev/null 2>&1 \
     || exit 3
 
 PYCCFLAGS=`$pyconf --cflags`
-PYLDFLAGS=`$pyconf --ldflags --embed`
+PYLDFLAGS=`$pyconf --ldflags`
 echo "PYCCFLAGS = $PYCCFLAGS" >> $defsfile
 echo "PYLDFLAGS = $PYLDFLAGS" >> $defsfile
 
