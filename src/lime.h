@@ -4,6 +4,7 @@
  *
  *  Copyright (C) 2006-2014 Christian Brinch
  *  Copyright (C) 2015-2017 The LIME development team
+ *  Copyright (C) 2023 mkirc
  *
  */
 
@@ -38,7 +39,7 @@
 
 #include "dims.h"
 
-#define VERSION "1.9.5"
+#define VERSION "1.9.5-mkirc"
 #define DEFAULT_NTHREADS 1
 #ifndef NTHREADS /* Value passed from the LIME script */
 #define NTHREADS DEFAULT_NTHREADS
