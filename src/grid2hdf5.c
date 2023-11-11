@@ -1345,7 +1345,7 @@ readKeywordsFromHDF5(hid_t parent, struct keywordType *kwds\
 void
 readGridExtFromHDF5(hid_t file, struct gridInfoType *gridInfoRead\
         , struct grid **gp, unsigned int **firstNearNeigh, char ***collPartNames\
-        , int *numCollPartRead, int *dataFlags, _Bool *densMolColsExists){
+        , int *numCollPartRead, int *dataFlags, _Bool *densMolColsExists, size_t nSpecies){
     /*
        The present function mallocs 'gp' and sets defaults for all the simple or first-level struct elements.
 
@@ -1385,7 +1385,6 @@ readGridExtFromHDF5(hid_t file, struct gridInfoType *gridInfoRead\
     space = H5Dget_space(dset);
     numSpaceDims = H5Sget_simple_extent_dims(space, spaceDims, maxSpaceDims);
     status = H5Sclose(space);
-    printf("%s\n" , status);
     //*** check status?
 
     if(numSpaceDims<0){
@@ -1415,23 +1414,33 @@ readGridExtFromHDF5(hid_t file, struct gridInfoType *gridInfoRead\
         return; /* I.e. with dataFlags left unchanged. */
     }
 
-    printf("First Error after that\n");
+    puts("Same Faulty DENSMOL1 check");
     /* Find out if the user has supplied ABUNMOLn or DENSMOLn columns.
     */
+    int densmolExists = -1;
     *densMolColsExists = FALSE;
-    dset = H5Dopen(dataGroup, "DENSMOL1", H5P_DEFAULT);
-    if(dset==0)
+    /* dset = H5Dopen(dataGroup, "DENSMOL1", H5P_DEFAULT); */
+    densmolExists = H5Lexists(dataGroup, "DENSMOL1", H5P_DEFAULT);
+    if(dset >= 0) {
         *densMolColsExists = TRUE;
-    status = H5Dclose(dset);
-    printf("Second Error after that\n");
+    } else {
+        puts("No densmol, must be datastage <= 3");
+    }
+    /* status = H5Dclose(dset); */
 
     /* Count the numbers of ABUNMOLn/DENSMOLn columns to get the number of species:
     */
-    if(*densMolColsExists)
+    if(*densMolColsExists) {
         gridInfoRead->nSpecies = (unsigned short)countDataSetNamePlusInt(dataGroup, "DENSMOL");
-    else
+    } else {
         gridInfoRead->nSpecies = (unsigned short)countDataSetNamePlusInt(dataGroup, "ABUNMOL");
-    mallocAndSetDefaultGrid(gp, (size_t)numGridCells, gridInfoRead->nSpecies);
+    }
+
+    if(gridInfoRead->nSpecies < nSpecies) {
+        mallocAndSetDefaultGrid(gp, (size_t)numGridCells, nSpecies);
+    } else {
+        mallocAndSetDefaultGrid(gp, (size_t)numGridCells, gridInfoRead->nSpecies);
+    }
 
     /* Read the columns.
     */
@@ -1457,7 +1466,6 @@ readGridExtFromHDF5(hid_t file, struct gridInfoType *gridInfoRead\
 
     /* We have to do this here (as well after the call to readGrid()) because grid.x is a pre-sized array rather than a pointer we can malloc. Later this should be changed to allow us to define the sizes of all arrays in grid purely from the data in the file.
     */
-    printf("Second error before that\n");
     if(gridInfoRead->nDims!=DIM){
         if(!silent){
             sprintf(message, "%d Xn columns read, but there should be %d.", (int)gridInfoRead->nDims, DIM);

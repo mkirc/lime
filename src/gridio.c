@@ -518,7 +518,7 @@ _readGridTable(lime_fptr fptr, struct gridInfoType *gridInfoRead\
 
 #if defined(lime_IO) && lime_IO==lime_HDF5
     readGridExtFromHDF5(fptr, gridInfoRead, gp, firstNearNeigh\
-            , collPartNames, numCollPartRead, dataFlags, densMolColsExists);
+            , collPartNames, numCollPartRead, dataFlags, densMolColsExists, nSpecies);
 #else
     readGridExtFromFITS(fptr, gridInfoRead, gp, firstNearNeigh\
             , collPartNames, numCollPartRead, dataFlags, densMolColsExists, nSpecies);
