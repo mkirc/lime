@@ -371,11 +371,17 @@ readOrBuildGrid(configInfo *par, struct grid **gp){
         //    if(!par->restart && !(par->lte_only && !allBitsSet(par->dataFlags, DS_mask_populations))){
         if(!par->lte_only && allBitsSet(par->dataFlags, DS_mask_populations) && par->doSolveRTE){
             /*
-               I don't understand the basis of the commented-out variant (e.g. we certainly won't arrive at this point if par->restart==TRUE), thus I can't be certain if it was right to modify it or not.
+               I don't understand the basis of the commented-out variant (e.g. we
+               certainly won't arrive at this point if par->restart==TRUE), thus I can't
+               be certain if it was right to modify it or not.
                */
             if(par->nSolveIters<=par->nSolveItersDone){
                 if(!silent){
-                    snprintf(message, STR_LEN_0, "par->nSolveIters %d must be > par->nSolveItersDone %d", par->nSolveIters, par->nSolveItersDone);
+                    snprintf(message,
+                            STR_LEN_0,
+                            "par->nSolveIters %d must be > par->nSolveItersDone %d",
+                            par->nSolveIters,
+                            par->nSolveItersDone);
                     bail_out(message);
                 }
                 exit(1);
@@ -386,13 +392,18 @@ readOrBuildGrid(configInfo *par, struct grid **gp){
     /* . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
        Generate the grid point locations.
        */
-    printf("Flags: %d\n", par->dataFlags);
-    printf("X Mask: %d\n", DS_mask_x);
-    printf("Any bit set: %d\n", anyBitSet(par->dataFlags, DS_mask_x));
-    if(!anyBitSet(par->dataFlags, DS_mask_x)){ /* This should only happen if we did not read a file. Generate the grid point locations. */
-        mallocAndSetDefaultGrid(gp, (size_t)par->ncell, (size_t)par->nSpecies);
+    /* printf("Flags: %d\n", par->dataFlags); */
+    /* printf("X Mask: %d\n", DS_mask_x); */
+    /* printf("Any bit set: %d\n", anyBitSet(par->dataFlags, DS_mask_x)); */
 
-        outRandDensities = malloc(sizeof(double   )*par->pIntensity); /* Not used at present; and in fact they are not useful outside this routine, because they are not the values of the physical density at that point, just what densityFunc3D() returns, which is not necessarily the same thing. */
+    /* This should only happen if we did not read a file. Generate the grid point
+     * locations. */
+    if(!anyBitSet(par->dataFlags, DS_mask_x)){
+        mallocAndSetDefaultGrid(gp, (size_t)par->ncell, (size_t)par->nSpecies);
+        /* Not used at present; and in fact they are not useful outside this routine,
+         * because they are not the values of the physical density at that point, just
+         * what densityFunc3D() returns, which is not necessarily the same thing. */
+        outRandDensities = malloc(sizeof(double)*par->pIntensity);
         outRandLocations = malloc(sizeof(*outRandLocations)*par->pIntensity);
 
         randGen = gsl_rng_alloc(ranNumGenType);	/* Random number generator */
@@ -491,41 +502,56 @@ readOrBuildGrid(configInfo *par, struct grid **gp){
         par->dataFlags |= DS_mask_1;
     }
 
-    if(onlyBitsSet(par->dataFlags, DS_mask_1)) /* Only happens if (i) we read no file and have constructed this data within LIME, or (ii) we read a file at dataStageI==1. */
+    /* Only happens if (i) we read no file and have constructed this data within LIME,
+     * or (ii) we read a file at dataStageI==1. */
+    if(onlyBitsSet(par->dataFlags, DS_mask_1))
         printf("datastage 1\n");
     writeGridIfRequired(par, *gp, NULL, 1);
 
     /* . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-       Generate the remaining values if needed. **Note** that we check a few of them to make sure the user has set the appropriate values.
+       Generate the remaining values if needed. **Note** that we check a few of them to
+       make sure the user has set the appropriate values.
        */
     if(!allBitsSet(par->dataFlags, DS_mask_neighbours)){
         unsigned long nExtraSinks;
 
         delaunay(DIM, *gp, (unsigned long)par->ncell, 0, 1, &dc, &numCells);
 
-        /* We just asked delaunay() to flag any grid points with IDs lower than par->pIntensity (which means their distances from model centre are less than the model radius) but which are nevertheless found to be sink points by virtue of the geometry of the mesh of Delaunay cells. Now we need to reshuffle the list of grid points, then reset par->pIntensity, such that all the non-sink points still have IDs lower than par->pIntensity.
-        */ 
+        /* We just asked delaunay() to flag any grid points with IDs lower than
+         * par->pIntensity (which means their distances from model centre are less than
+         * the model radius) but which are nevertheless found to be sink points by
+         * virtue of the geometry of the mesh of Delaunay cells. Now we need to
+         * reshuffle the list of grid points, then reset par->pIntensity, such that all
+         * the non-sink points still have IDs lower than par->pIntensity.
+        */
         nExtraSinks = reorderGrid((unsigned long)par->ncell, *gp);
         par->pIntensity -= nExtraSinks;
         par->sinkPoints += nExtraSinks;
 
         par->dataFlags |= DS_mask_neighbours;
     }
-    distCalc(par, *gp); /* Mallocs and sets .dir & .ds, sets .nphot. We don't store these values so we have to calculate them whether we read a file or not. */
+    /* Mallocs and sets .dir & .ds, sets .nphot. We don't store these values so we have
+     * to calculate them whether we read a file or not. */
+    distCalc(par, *gp);
 
-    if(onlyBitsSet(par->dataFlags, DS_mask_2)) /* Only happens if (i) we read no file and have constructed this data within LIME, or (ii) we read a file at dataStageI==2. */
+    /* Only happens if (i) we read no file and have constructed this data within LIME,
+     * or (ii) we read a file at dataStageI==2. */
+    if(onlyBitsSet(par->dataFlags, DS_mask_2))
         printf("datastage 2\n");
     writeGridIfRequired(par, *gp, NULL, 2);
 
     if(!allBitsSet(par->dataFlags, DS_mask_density)){
-        /* Note that we have checked in parseInput() that the user has defined sufficient values. */
+        /* Note that we have checked in parseInput() that the user has defined
+         * sufficient values. */
         for(i=0;i<par->ncell; i++)
             (*gp)[i].dens = malloc(sizeof(double)*par->numDensities);
         for(i=0;i<par->pIntensity;i++)
             density((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].dens);
         for(i=par->pIntensity;i<par->ncell;i++){
             for(j=0;j<par->numDensities;j++)
-                (*gp)[i].dens[j]=EPS; //************** what is the low but non zero value for? Probably to make sure no ills happen in case something gets divided by this?
+                //************** what is the low but non zero value for? Probably to
+                //make sure no ills happen in case something gets divided by this?
+                (*gp)[i].dens[j]=EPS;
         }
 
         par->dataFlags |= DS_mask_density;
@@ -536,7 +562,8 @@ readOrBuildGrid(configInfo *par, struct grid **gp){
 
     if(!allBitsSet(par->dataFlags, DS_mask_temperatures)){
         if(!bitIsSet(defaultFuncFlags, USERFUNC_temperature)){
-            /* Check that the user has defined gas temperatures at least (if the dust temp was not defined, it is taken to be the same as the gas temp).
+            /* Check that the user has defined gas temperatures at least (if the dust
+             * temp was not defined, it is taken to be the same as the gas temp).
             */
             dummyT[0] = -1.0; /* a non-physical temperature. */
             temperature(0.0,0.0,0.0, dummyT);
@@ -556,18 +583,20 @@ readOrBuildGrid(configInfo *par, struct grid **gp){
         par->dataFlags |= DS_mask_temperatures;
     }
 
-    if(onlyBitsSet(par->dataFlags, DS_mask_3)) /* Only happens if (i) we read no file and have constructed this data within LIME, or (ii) we read a file at dataStageI==3. */
+    /* Only happens if (i) we read no file and have constructed this data within LIME,
+     * or (ii) we read a file at dataStageI==3. */
+    if(onlyBitsSet(par->dataFlags, DS_mask_3))
         printf("datastage 3\n");
     writeGridIfRequired(par, *gp, NULL, 3); /* Sufficient information for a continuum image. */
 
     if(par->doMolCalcs){
         if(!allBitsSet(par->dataFlags, DS_mask_abundance)){
-            /* Means we didn't read abun values from file, we have to calculate them via the user-supplied fuction. */
+            /* Means we didn't read abun values from file, we have to calculate them via
+             * the user-supplied fuction. */
             dummyPointer = malloc(sizeof(*dummyPointer)*par->nSpecies);
             if(par->useAbun){
                 if(!bitIsSet(defaultFuncFlags, USERFUNC_abundance)){
-                    /* Check that the user set reasonable values for all species.
-                    */
+                    // Check that the user set reasonable values for all species.
                     for(si=0;si<par->nSpecies;si++)
                         dummyPointer[si] = -1.0; /* non-physical values. */
                     abundance(0.0,0.0,0.0, dummyPointer);
@@ -579,14 +608,12 @@ readOrBuildGrid(configInfo *par, struct grid **gp){
                     }
                 }
 
-                /* puts("Segfault after here"); */
                 for(i=0;i<par->pIntensity;i++){
                     abundance((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],dummyPointer);
                     for(si=0;si<par->nSpecies;si++) {
                         (*gp)[i].mol[si].abun = dummyPointer[si];
                     }
                 }
-                /* puts("Segfault before here"); */
                 for(i=par->pIntensity;i<par->ncell;i++){
                     for(si=0;si<par->nSpecies;si++)
                         (*gp)[i].mol[si].abun = 0.0;
@@ -623,8 +650,7 @@ readOrBuildGrid(configInfo *par, struct grid **gp){
 
         if(!allBitsSet(par->dataFlags, DS_mask_turb_doppler)){
             if(!bitIsSet(defaultFuncFlags, USERFUNC_doppler)){
-                /* Check that the user set reasonable values.
-                */
+                // Check that the user set reasonable values.
                 dummyScalar = -1.0; /* a non-physical value. */
                 doppler(0.0,0.0,0.0, &dummyScalar);
                 if(dummyScalar<0.0){
@@ -642,11 +668,13 @@ readOrBuildGrid(configInfo *par, struct grid **gp){
         }
 
         if(!allBitsSet(par->dataFlags, DS_mask_velocity)){
-            /* There seems to be no way we can test if the user has set velocities properly because -ve component values are of course possible. */
+            /* There seems to be no way we can test if the user has set velocities
+             * properly because -ve component values are of course possible. */
             for(i=0;i<par->pIntensity;i++)
                 velocity((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].vel);
 
-            /* Set velocity values also for sink points (otherwise Delaunay ray-tracing has problems) */
+            /* Set velocity values also for sink points (otherwise Delaunay ray-tracing
+             * has problems) */
             for(i=par->pIntensity;i<par->ncell;i++)
                 velocity((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].vel);
 
@@ -655,7 +683,10 @@ readOrBuildGrid(configInfo *par, struct grid **gp){
 
         if(!allBitsSet(par->dataFlags, DS_mask_ACOEFF)){
             if(!bitIsSet(defaultFuncFlags, USERFUNC_velocity)){
-                getEdgeVelocities(par,*gp); /* Mallocs and sets .v1, .v2, .v3, which are only used within calculateJBar(), which is only called if par->doMolCalcs. This also sets par->edgeVelsAvailable. */
+                /* Mallocs and sets .v1, .v2, .v3, which are only used within
+                 * calculateJBar(), which is only called if par->doMolCalcs. This also
+                 * sets par->edgeVelsAvailable. */
+                getEdgeVelocities(par,*gp);
 
                 par->dataFlags |= DS_mask_ACOEFF;
             }
@@ -664,7 +695,8 @@ readOrBuildGrid(configInfo *par, struct grid **gp){
 
     if(!allBitsSet(par->dataFlags, DS_mask_magfield)){
         if(par->polarization){
-            /* There seems to be no way we can test if the user has set B field values properly because -ve component values are of course possible. */
+            /* There seems to be no way we can test if the user has set B field values
+             * properly because -ve component values are of course possible. */
             for(i=0;i<par->pIntensity;i++)
                 magfield((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].B);
 
