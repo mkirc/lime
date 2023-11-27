@@ -16,22 +16,31 @@
 #include "gridio.h"
 
 /*
-   The present module contains routines for transferring the LIME grid point data to or from a FITS format file. The purpose of the present comment block is to describe the FITS file format. Note that the amount and type of information stored depends on the 'data stage' of the grid struct, as described in the header remarks to module gridio.c.
+The present module contains routines for transferring the LIME grid point data to or
+from a FITS format file. The purpose of the present comment block is to describe the
+FITS file format. Note that the amount and type of information stored depends on the
+'data stage' of the grid struct, as described in the header remarks to module
+gridio.c.
 
-   In the description below, the data stage bit associated with the presence of a particular extension, column or keyword is given on the leftmost place of each line. When the file is read, all the objects associated with a bit must be present for the bit to be set.
+In the description below, the data stage bit associated with the presence of a
+particular extension, column or keyword is given on the leftmost place of each line.
+When the file is read, all the objects associated with a bit must be present for the
+bit to be set.
 
-   Note that all extensions are binary table except where indicated. The letter in the second row for column descriptions gives the FITS data type. See eg
+Note that all extensions are binary table except where indicated. The letter in the
+second row for column descriptions gives the FITS data type. See eg
 
 https://heasarc.gsfc.nasa.gov/docs/software/fitsio/c/c_user/node20.html
 
 for a key to these.
 
-Where column names contain a lower-case letter, this is a placeholder for a digit as explained in the respective comment.
+Where column names contain a lower-case letter, this is a placeholder for a digit as
+explained in the respective comment.
 
 0	0) The primary HDU
 
 Keywords:
-0		RADIUS		D	# The model radius in metres.
+0   RADIUS		D	# The model radius in metres.
 
 0	1) GRID
 Number of rows = number of grid points.
@@ -983,6 +992,9 @@ readGridExtFromFITS(fitsfile *fptr, struct gridInfoType *gridInfoRead\
     }
 
     /* Find out if the user has supplied ABUNMOLn or DENSMOLn columns.
+     * Attendum: This check is eased somewhat in order to enable reading
+     * files from datastage <= 3, in which neither ABUNMOLn, nor DENSMOLn
+     * is required to be found.
     */
     *densMolColsExists = FALSE;
     fits_get_colnum(fptr, CASEINSEN, "DENSMOL1", &colNum, &status);
@@ -1033,11 +1045,16 @@ readGridExtFromFITS(fitsfile *fptr, struct gridInfoType *gridInfoRead\
         return; /* I.e. with dataFlags left unchanged. */
     }
 
-    /* We have to do this here (as well after the call to readGrid()) because grid.x is a pre-sized array rather than a pointer we can malloc. Later this should be changed to allow us to define the sizes of all arrays in grid purely from the data in the file.
+    /* We have to do this here (as well after the call to readGrid()) because grid.x is
+     * a pre-sized array rather than a pointer we can malloc. Later this should be
+     * changed to allow us to define the sizes of all arrays in grid purely from the
+     * data in the file.
     */
     if(gridInfoRead->nDims!=DIM){
         if(!silent){
-            snprintf(message, STR_LEN_0, "%d Xn columns read, but there should be %d.", (int)gridInfoRead->nDims, DIM);
+            snprintf(message, STR_LEN_0,
+                    "%d Xn columns read, but there should be %d.",
+                    (int)gridInfoRead->nDims, DIM);
             bail_out(message);
         }
         exit(1);
@@ -1049,7 +1066,16 @@ readGridExtFromFITS(fitsfile *fptr, struct gridInfoType *gridInfoRead\
         fits_get_colnum(fptr, CASEINSEN, colName, &colNum, &status);
         processFitsError(status);
 
-        fits_read_col(fptr, TDOUBLE, colNum, firstRow, firstElem, numGridCells, 0, xj, &anynul, &status);
+        fits_read_col(fptr,
+                      TDOUBLE,
+                      colNum,
+                      firstRow,
+                      firstElem,
+                      numGridCells,
+                      0,
+                      xj,
+                      &anynul,
+                      &status);
         processFitsError(status);
 
         for(i_LL=0;i_LL<numGridCells;i_LL++) {
@@ -1091,7 +1117,17 @@ readGridExtFromFITS(fitsfile *fptr, struct gridInfoType *gridInfoRead\
         processFitsError(status);
 
         numNeigh = malloc(sizeof(*numNeigh)*numGridCells);
-        fits_read_col(fptr, TUSHORT, colNum, firstRow, firstElem, numGridCells, 0, numNeigh, &anynul, &status);
+        fits_read_col(fptr,
+                      TUSHORT,
+                      colNum,
+                      firstRow,
+                      firstElem,
+                      numGridCells,
+                      0,
+                      numNeigh,
+                      &anynul,
+                      &status);
+
         processFitsError(status);
 
         for(i_LL=0;i_LL<numGridCells;i_LL++) {
@@ -1104,10 +1140,21 @@ readGridExtFromFITS(fitsfile *fptr, struct gridInfoType *gridInfoRead\
             processFitsError(status);
 
             *firstNearNeigh = malloc(sizeof(**firstNearNeigh)*numGridCells);
-            fits_read_col(fptr, TUINT, colNum, firstRow, firstElem, numGridCells, 0, *firstNearNeigh, &anynul, &status);
+            fits_read_col(fptr,
+                          TUINT,
+                          colNum,
+                          firstRow,
+                          firstElem,
+                          numGridCells,
+                          0,
+                          *firstNearNeigh,
+                          &anynul,
+                          &status);
             processFitsError(status);
 
-            /* If we made it to here, we can set the neighbour bit of dataFlags. Note however that this bit is only on trial til we check for the LINKS extension. So it had better behave itself.
+            /* If we made it to here, we can set the neighbour bit of dataFlags. Note
+             * however that this bit is only on trial til we check for the LINKS
+             * extension. So it had better behave itself.
             */
             (*dataFlags) |= (1 << DS_bit_neighbours);
         }
@@ -1230,40 +1277,71 @@ readGridExtFromFITS(fitsfile *fptr, struct gridInfoType *gridInfoRead\
         (*dataFlags) |= (1 << DS_bit_turb_doppler);
     }
 
-    //*** there is probably a neater way to do the temperatures. Resetting the t0 defaults is a bit ugly.
-    /* Read the TEMPKNTC column:
+    /* there is probably a neater way to do the temperatures.
+     * Resetting the t0 defaults is a bit ugly.
+     * Attendum: It is absolutely unclear why one would do this!
+     * Setting dust temperature to an unphysical temperature if not provided
+     * seems like a good approach.
+     *
+     * Question arises if DS_bit_temperatures shall only
+     * set if dust temperatures are provided (old behaviour).
+     * If so, the user has to provide a file with TEMPDUST column set
+     * to -1. Its arguably more intuitive to set it if TEMPKNTC is found.
+     *
+     * Then of course the user can't mix reading the gas temperature and
+     * calculating the dust temperature, but this seems like a reasonable
+     * tradeoff.
     */
+
+    // Read the TEMPKNTC column:
     status = 0;
     fits_get_colnum(fptr, CASEINSEN, "TEMPKNTC", &colNum, &status);
     if(status!=COL_NOT_FOUND){
         processFitsError(status);
 
         t = malloc(sizeof(*t)*numGridCells);
-        fits_read_col(fptr, TFLOAT, colNum, firstRow, firstElem, numGridCells, 0, t, &anynul, &status);
+        fits_read_col(fptr,
+                      TFLOAT,
+                      colNum,
+                      firstRow,
+                      firstElem,
+                      numGridCells,
+                      0,
+                      t,
+                      &anynul,
+                      &status);
         processFitsError(status);
 
         for(i_LL=0;i_LL<numGridCells;i_LL++) {
             (*gp)[i_LL].t[0] = (double)t[i_LL];
         }
+        (*dataFlags) |= (1 << DS_bit_temperatures);
 
-        /* Read the TEMPDUST column:
-        */
+        // Read the TEMPDUST column:
         fits_get_colnum(fptr, CASEINSEN, "TEMPDUST", &colNum, &status);
-        if(status==COL_NOT_FOUND){ /* Set t0 back to defaults: */
+        if(status==COL_NOT_FOUND){ /* Set t1 to defaults: */
             for(i_LL=0;i_LL<numGridCells;i_LL++) {
-                (*gp)[i_LL].t[0] = -1;
+                (*gp)[i_LL].t[1] = -1;
             }
         }else{
             processFitsError(status);
 
-            fits_read_col(fptr, TFLOAT, colNum, firstRow, firstElem, numGridCells, 0, t, &anynul, &status);
+            fits_read_col(fptr,
+                          TFLOAT,
+                          colNum,
+                          firstRow,
+                          firstElem,
+                          numGridCells,
+                          0,
+                          t,
+                          &anynul,
+                          &status);
             processFitsError(status);
 
             for(i_LL=0;i_LL<numGridCells;i_LL++) {
                 (*gp)[i_LL].t[1] = (double)t[i_LL];
             }
 
-            (*dataFlags) |= (1 << DS_bit_temperatures);
         }
         free(t);
     }

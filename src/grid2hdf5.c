@@ -1362,11 +1362,11 @@ readGridExtFromHDF5(hid_t file, struct gridInfoType *gridInfoRead\
         , struct grid **gp, unsigned int **firstNearNeigh, char ***collPartNames\
         , int *numCollPartRead, int *dataFlags, _Bool *densMolColsExists, size_t nSpecies){
     /*
-       The present function mallocs 'gp' and sets defaults for all the simple or first-level struct elements.
-
-       If COLLPARn attributes are found in the GRID group then collPartNames is malloc'd to the number of these which have 'n' values forming a consecutive sequence increasing from 1.
-
-       Note that the calling routine needs to free gp, firstNearNeigh and collPartNames after use.
+       The present function mallocs 'gp' and sets defaults for all the simple or
+       first-level struct elements.  If COLLPARn attributes are found in the GRID group
+       then collPartNames is malloc'd to the number of these which have 'n' values
+       forming a consecutive sequence increasing from 1.  Note that the calling routine
+       needs to free gp, firstNearNeigh and collPartNames after use.
        */
 
     hid_t hduGroup,dataGroup,dset,space,attr,atype,atype_mem;
@@ -1429,8 +1429,11 @@ readGridExtFromHDF5(hid_t file, struct gridInfoType *gridInfoRead\
         return; /* I.e. with dataFlags left unchanged. */
     }
 
-    puts("Same Faulty DENSMOL1 check");
+    /* puts("Same Faulty DENSMOL1 check"); */
     /* Find out if the user has supplied ABUNMOLn or DENSMOLn columns.
+     * Attendum: This check is eased somewhat in order to enable reading
+     * files from datastage <= 3, in which neither ABUNMOLn, nor DENSMOLn
+     * is required to be found.
     */
     int densmolExists = -1;
     *densMolColsExists = FALSE;
@@ -1479,7 +1482,10 @@ readGridExtFromHDF5(hid_t file, struct gridInfoType *gridInfoRead\
         return; /* I.e. with dataFlags left unchanged. */
     }
 
-    /* We have to do this here (as well after the call to readGrid()) because grid.x is a pre-sized array rather than a pointer we can malloc. Later this should be changed to allow us to define the sizes of all arrays in grid purely from the data in the file.
+    /* We have to do this here (as well after the call to readGrid()) because grid.x is
+     * a pre-sized array rather than a pointer we can malloc. Later this should be
+     * changed to allow us to define the sizes of all arrays in grid purely from the
+     * data in the file.
     */
     if(gridInfoRead->nDims!=DIM){
         if(!silent){
@@ -1562,7 +1568,9 @@ readGridExtFromHDF5(hid_t file, struct gridInfoType *gridInfoRead\
             status = H5Dclose(dset);
             //*** check status?
 
-            /* If we made it to here, we can set the neighbour bit of dataFlags. Note however that this bit is only on trial til we check for the LINKS extension. So it had better behave itself.
+            /* If we made it to here, we can set the neighbour bit of dataFlags. Note
+             * however that this bit is only on trial til we check for the LINKS
+             * extension. So it had better behave itself.
             */
             (*dataFlags) |= (1 << DS_bit_neighbours);
         }
@@ -1683,9 +1691,23 @@ readGridExtFromHDF5(hid_t file, struct gridInfoType *gridInfoRead\
         (*dataFlags) |= (1 << DS_bit_turb_doppler);
     }
 
-    //*** there is probably a neater way to do the temperatures. Resetting the t0 defaults is a bit ugly.
-    /* Read the TEMPKNTC column:
+    /* there is probably a neater way to do the temperatures.
+     * Resetting the t0 defaults is a bit ugly.
+     * Attendum: It is absolutely unclear why one would do this!
+     * Setting dust temperature to an unphysical temperature if not provided
+     * seems like a good approach.
+     *
+     * Question arises if DS_bit_temperatures shall only
+     * set if dust temperatures are provided (old behaviour).
+     * If so, the user has to provide a file with TEMPDUST column set
+     * to -1. Its arguably more intuitive to set it if TEMPKNTC is found.
+     *
+     * Then of course the user can't mix reading the gas temperature and
+     * calculating the dust temperature, but this seems like a reasonable
+     * tradeoff.
     */
+
+    // read kinetic gas temperature column
     myi = H5Lexists(dataGroup, "TEMPKNTC", H5P_DEFAULT);
     if((int)myi>0){
         dset = H5Dopen(dataGroup, "TEMPKNTC", H5P_DEFAULT);
@@ -1700,16 +1722,16 @@ readGridExtFromHDF5(hid_t file, struct gridInfoType *gridInfoRead\
             (*gp)[i_ui].t[0] = (double)t[i_ui];
         }
 
-        /* Read the TEMPDUST column:
-        */
+        (*dataFlags) |= (1 << DS_bit_temperatures);
+
+        // Read the dust temperature column:
         myi = H5Lexists(dataGroup, "TEMPDUST", H5P_DEFAULT);
         if((int)myi<=0){
             for(i_ui=0;i_ui<numGridCells;i_ui++) {
-                (*gp)[i_ui].t[0] = -1;
+                (*gp)[i_ui].t[1] = -1;
             }
         }else{
             dset = H5Dopen(dataGroup, "TEMPDUST", H5P_DEFAULT);
-
             status = H5Dread(dset, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, t);
             //*** check status?
             status = H5Dclose(dset);
@@ -1718,8 +1740,6 @@ readGridExtFromHDF5(hid_t file, struct gridInfoType *gridInfoRead\
             for(i_ui=0;i_ui<numGridCells;i_ui++) {
                 (*gp)[i_ui].t[1] = (double)t[i_ui];
             }
-
-            (*dataFlags) |= (1 << DS_bit_temperatures);
         }
         free(t);
     }
@@ -1730,7 +1750,9 @@ readGridExtFromHDF5(hid_t file, struct gridInfoType *gridInfoRead\
     if(numBFieldCols>0){
         if(numBFieldCols!=3){
             if(!silent){
-                sprintf(message, "Wrong number (%d) of B_FIELD columns - there should be %d.", numBFieldCols, 3);
+                sprintf(message,
+                        "Wrong number (%d) of B_FIELD columns - there should be %d.",
+                        numBFieldCols, 3);
                 bail_out(message);
             }
             exit(1);
