@@ -17,33 +17,11 @@ void mallocAndSetDefaultGrid(struct grid **gp, const size_t numPoints, const siz
 
     *gp = calloc(numPoints, sizeof(struct grid));
     for(i=0;i<numPoints; i++){
-        /* (*gp)[i].v1 = NULL; */
-        /* (*gp)[i].v2 = NULL; */
-        /* (*gp)[i].v3 = NULL; */
-        /* (*gp)[i].dir = NULL; */
-        /* (*gp)[i].neigh = NULL; */
-        /* (*gp)[i].w = NULL; */
-        /* (*gp)[i].ds = NULL; */
-        /* (*gp)[i].dens=NULL; */
         (*gp)[i].t[0]=-1.0;
         (*gp)[i].t[1]=-1.0;
-        /* (*gp)[i].B[0]=0.0; */
-        /* (*gp)[i].B[1]=0.0; */
-        /* (*gp)[i].B[2]=0.0; */
-        /* (*gp)[i].conv=0; */
 
         if(numSpecies > 0){
             (*gp)[i].mol = calloc(numSpecies, sizeof(struct populations));
-            /* for(j=0;j<numSpecies;j++){ */
-            /*   (*gp)[i].mol[j].pops        = NULL; */
-            /*   (*gp)[i].mol[j].specNumDens = NULL; */
-            /*   (*gp)[i].mol[j].partner     = NULL; */
-            /*   (*gp)[i].mol[j].cont        = NULL; */
-            /*   (*gp)[i].mol[j].dopb = 0.0; */
-            /*   (*gp)[i].mol[j].binv = 0.0; */
-            /*   (*gp)[i].mol[j].nmol = 0.0; */
-            /*   (*gp)[i].mol[j].abun = 0.0; */
-            /* } */
         }else
             (*gp)[i].mol = NULL;
     }
@@ -117,9 +95,15 @@ void
 delaunay(const int numDims, struct grid *gp, const unsigned long numPoints\
         , const _Bool getCells, _Bool checkSink, struct cell **dc, unsigned long *numCells){
     /*
-       The principal purpose of this function is to perform a Delaunay triangulation for the set of points defined by the input argument 'g'. This is achieved via routines in the 3rd-party package qhull.
+       The principal purpose of this function is to perform a Delaunay triangulation for
+       the set of points defined by the input argument 'g'. This is achieved via
+       routines in the 3rd-party package qhull.
 
-       A note about qhull nomenclature: a vertex is what you think it is - i.e., a point; but a facet means in this context a Delaunay triangle (in 2D) or tetrahedron (in 3D). This nomenclature arises because the Delaunay cells are indeed facets (or rather projections of facets) of the convex hull constructed in 1 higher dimension.
+       A note about qhull nomenclature: a vertex is what you think it is - i.e., a
+       point; but a facet means in this context a Delaunay triangle (in 2D) or
+       tetrahedron (in 3D). This nomenclature arises because the Delaunay cells are
+       indeed facets (or rather projections of facets) of the convex hull constructed in
+       1 higher dimension.
 
        Required elements of structs:
        struct grid *gp:
@@ -158,8 +142,10 @@ delaunay(const int numDims, struct grid *gp, const unsigned long numPoints\
         }
     }
 
-    /* Run qhull to generate the Delaunay mesh. (After this, all the information of importance is stored in variables defined in the qhull header.)
+    /* Run qhull to generate the Delaunay mesh. (After this, all the information of
+     * importance is stored in variables defined in the qhull header.)
     */
+    /* sprintf(flags,"qhull d Qbb Qt"); */
     sprintf(flags,"qhull d Qbb Qt");
     if (qh_new_qhull(numDims, (int)numPoints, pt_array, ismalloc, flags, NULL, NULL)) {
         if(!silent) bail_out("Qhull failed to triangulate");
@@ -182,14 +168,20 @@ delaunay(const int numDims, struct grid *gp, const unsigned long numPoints\
         }
     }
 
-    /* Malloc .neigh for each grid point. At present it is not known how many neighbours a point will have, so all the mallocs are larger than needed.
+    /* Malloc .neigh for each grid point. At present it is not known how many neighbours
+     * a point will have, so all the mallocs are larger than needed.
     */
     FORALLvertices {
         id=(unsigned long)qh_pointid(vertex->point);
-        /* Note this is NOT the same value as vertex->id. Only the id gained via the call to qh_pointid() is the same as the index of the point in the input list. */
+        /* Note this is NOT the same value as vertex->id. Only the id gained via the
+         * call to qh_pointid() is the same as the index of the point in the input list.
+         * */
 
         gp[id].numNeigh=qh_setsize(vertex->neighbors);
-        /* Note that vertex->neighbors refers to facets abutting the vertex, not other vertices. In general there seem to be more facets surrounding a point than vertices (in fact there seem to be exactly 2x as many). In any case, mallocing to N_facets gives extra room. */
+        /* Note that vertex->neighbors refers to facets abutting the vertex, not other
+         * vertices. In general there seem to be more facets surrounding a point than
+         * vertices (in fact there seem to be exactly 2x as many). In any case,
+         * mallocing to N_facets gives extra room. */
 
         if(gp[id].numNeigh<=0){
             if(!silent){
@@ -206,12 +198,15 @@ delaunay(const int numDims, struct grid *gp, const unsigned long numPoints\
         }
     }
 
-    /* Identify the Delaunay neighbors of each point. This is a little involved, because the only direct information we have about which vertices are linked to which others is stored in qhull's facetT objects.
+    /* Identify the Delaunay neighbors of each point. This is a little involved, because
+     * the only direct information we have about which vertices are linked to which
+     * others is stored in qhull's facetT objects.
     */
     *numCells = 0;
     FORALLfacets {
         if (!facet->upperdelaunay) {
-            /* Store the point IDs in a list for convenience. These ID values are conveniently ordered such that qh_pointid() returns ppi for gp[ppi]. 
+            /* Store the point IDs in a list for convenience. These ID values are
+             * conveniently ordered such that qh_pointid() returns ppi for gp[ppi].
             */
             j=0;
             FOREACHvertex_ (facet->vertices) pointIdsThisFacet[j++]=(unsigned long)qh_pointid(vertex->point);
@@ -221,7 +216,8 @@ delaunay(const int numDims, struct grid *gp, const unsigned long numPoints\
                 for(j=0;j<numDims+1;j++){
                     idJ = pointIdsThisFacet[j];
                     if(i!=j){
-                        /* Cycle through all the non-NULL links of gp[idI], storing the link if it is new.
+                        /* Cycle through all the non-NULL links of gp[idI], storing the
+                         * link if it is new.
                         */
                         k=0;
                         while(gp[idI].neigh[k] != NULL && gp[idI].neigh[k]->id != gp[idJ].id)
@@ -250,7 +246,8 @@ delaunay(const int numDims, struct grid *gp, const unsigned long numPoints\
         fi = 0;
         FORALLfacets {
             if (!facet->upperdelaunay) {
-                (*dc)[fi].id = (unsigned long)facet->id; /* Do NOT expect this to be equal to fi. */
+                /* Do NOT expect this to be equal to fi. */
+                (*dc)[fi].id = (unsigned long)facet->id;
                 fi++;
             }
         }
@@ -263,7 +260,8 @@ delaunay(const int numDims, struct grid *gp, const unsigned long numPoints\
                     if(neighbor->upperdelaunay){
                         (*dc)[fi].neigh[i] = NULL;
                     }else{
-                        /* Have to find the member of *dc with the same id as neighbour.*/
+                        /* Have to find the member of *dc with the same id as
+                         * neighbour.*/
                         ffi = 0;
                         neighbourNotFound=1;
                         while(ffi<(*numCells) && neighbourNotFound){
@@ -275,7 +273,9 @@ delaunay(const int numDims, struct grid *gp, const unsigned long numPoints\
                         }
                         if(ffi>=(*numCells) && neighbourNotFound){
                             if(!silent){
-                                snprintf(message, STR_LEN_1, "Something weird going on. Cannot find a cell with ID %lu", (unsigned long)(neighbor->id));
+                                snprintf(message, STR_LEN_1,
+                                        "Something weird going on. Cannot find a cell with ID %lu",
+                                        (unsigned long)(neighbor->id));
                                 bail_out(message);
                             }
                             exit(1);
@@ -305,7 +305,12 @@ delaunay(const int numDims, struct grid *gp, const unsigned long numPoints\
 unsigned long
 reorderGrid(const unsigned long numPoints, struct grid *gp){
     /*
-       The algorithm works its way up the list of points with one index and down with another. The 'up' travel stops at the 1st sink point it finds, the 'down' at the 1st non-sink point. If at that point the 'up' index is lower in value than the 'down', the points are swapped. This is just a tiny bit tricky because we also need to make sure all the neigh pointers are swapped. That's why we make an ordered list of indices and perform the swaps on that as well.
+       The algorithm works its way up the list of points with one index and down with
+       another. The 'up' travel stops at the 1st sink point it finds, the 'down' at the
+       1st non-sink point. If at that point the 'up' index is lower in value than the
+       'down', the points are swapped. This is just a tiny bit tricky because we also
+       need to make sure all the neigh pointers are swapped. That's why we make an
+       ordered list of indices and perform the swaps on that as well.
        */
 
     unsigned long indices[numPoints],upI,dnI,nExtraSinks=0,i,ngi;
@@ -339,14 +344,17 @@ reorderGrid(const unsigned long numPoints, struct grid *gp){
     }
 
     /*
-       Now we sort out the .neigh values. An example of how this should work is as follows. Suppose we swapped points 30 and 41. We have fixed up the .id values, but the swap is still shown in the 'indices' array. Thus we will have
+       Now we sort out the .neigh values. An example of how this should work is as
+       follows. Suppose we swapped points 30 and 41. We have fixed up the .id values,
+       but the swap is still shown in the 'indices' array. Thus we will have
 
-       gp[30].id == 30 (but all the other data is from 41)
-       gp[41].id == 41 (but all the other data is from 30)
-       indices[30] == 41
-       indices[41] == 30
+       gp[30].id == 30 (but all the other data is from 41) gp[41].id == 41 (but all the
+       other data is from 30) indices[30] == 41 indices[41] == 30
 
-       Suppose further that the old value of gp[i].neigh[j] is &gp[30]. We detect that we need to fix it (change it to &gp[41]) because ngi=&gp[30].id=30 != indices[ngi=30]=41. gp[i].neigh[j] is then reset to &gp[indices[30]] = &gp[41], i.e. to point to the same data as used to be in location 30.
+       Suppose further that the old value of gp[i].neigh[j] is &gp[30]. We detect that
+       we need to fix it (change it to &gp[41]) because ngi=&gp[30].id=30 !=
+       indices[ngi=30]=41. gp[i].neigh[j] is then reset to &gp[indices[30]] = &gp[41],
+       i.e. to point to the same data as used to be in location 30.
        */
     for(i=0;i<numPoints;i++){
         for(j=0;j<gp[i].numNeigh;j++){
@@ -366,15 +374,15 @@ void distCalc(configInfo *par, struct grid *gp){
     for(i=0;i<par->ncell;i++){
         free(gp[i].dir);
         free(gp[i].ds);
-        gp[i].dir=malloc(sizeof(*(gp[i].dir)) *gp[i].numNeigh);
-        gp[i].ds =malloc(sizeof(double)*gp[i].numNeigh);
-        memset(gp[i].dir, 0., sizeof(*(gp[i].dir)) * gp[i].numNeigh);
+        gp[i].dir = malloc(sizeof(struct point) * gp[i].numNeigh);
+        gp[i].ds = malloc(sizeof(double) * gp[i].numNeigh);
+        memset(gp[i].dir, 0., sizeof(struct point) * gp[i].numNeigh);
         memset(gp[i].ds, 0., sizeof(double) * gp[i].numNeigh);
         for(k=0;k<gp[i].numNeigh;k++){
             for(l=0;l<3;l++)
                 gp[i].dir[k].x[l] = gp[i].neigh[k]->x[l] - gp[i].x[l];
 
-            gp[i].ds[k] = sqrt(  gp[i].dir[k].x[0]*gp[i].dir[k].x[0]\
+            gp[i].ds[k] = sqrt(gp[i].dir[k].x[0]*gp[i].dir[k].x[0]\
                     + gp[i].dir[k].x[1]*gp[i].dir[k].x[1]\
                     + gp[i].dir[k].x[2]*gp[i].dir[k].x[2]);
 
@@ -399,15 +407,15 @@ write_VTK_unstructured_Points(configInfo *par, struct grid *g){
     coordT *pt_array;
     int curlong, totlong;
 
-    pt_array=malloc(sizeof(coordT)*DIM*par->ncell);
+    pt_array = malloc(sizeof(coordT)*DIM*par->ncell);
 
-    for(i=0;i<par->ncell;i++) {
-        for(j=0;j<DIM;j++) {
+    for(i=0; i<par->ncell; i++) {
+        for(j=0; j<DIM; j++) {
             pt_array[i*DIM+j]=g[i].x[j];
         }
     }
 
-    if((fp=fopen(par->gridfile, "w"))==NULL){
+    if((fp = fopen(par->gridfile, "w"))==NULL){
         if(!silent) bail_out("Error writing grid file!");
         exit(1);
     }
@@ -421,7 +429,8 @@ write_VTK_unstructured_Points(configInfo *par, struct grid *g){
     }
     fprintf(fp, "\n");
 
-    sprintf(flags,"qhull d Qbb T0");
+    sprintf(flags,"qhull d Qbb Qt");
+    /* sprintf(flags,"qhull d Qbb T0"); */
 
     if (!qh_new_qhull(DIM, par->ncell, pt_array, ismalloc, flags, NULL, NULL)) {
         FORALLfacets {
@@ -429,7 +438,7 @@ write_VTK_unstructured_Points(configInfo *par, struct grid *g){
         }
         fprintf(fp,"CELLS %d %d\n",l, 5*l);
         FORALLfacets {
-            if (!facet->upperdelaunay) {
+            if (!facet->upperdelaunay && facet->simplicial) {
                 fprintf(fp,"4 ");
                 FOREACHvertex_ (facet->vertices) {
                     fprintf(fp, "%d ", qh_pointid(vertex->point));
@@ -492,9 +501,9 @@ getEdgeVelocities(configInfo *par, struct grid *gp){
         gp[i].v3=malloc(3*gp[i].numNeigh*sizeof(double));
 
         for(k=0;k<gp[i].numNeigh;k++){
-            for(j=0;j<3;j++) x[j]=gp[i].x[j];		
+            for(j=0;j<3;j++) x[j]=gp[i].x[j];
             for(l=0;l<5;l++){
-                velocity(x[0],x[1],x[2],vel);	
+                velocity(x[0],x[1],x[2],vel);
 
                 if (l==1) {
                     gp[i].v1[3*k]=vel[0]; gp[i].v1[3*k+1]=vel[1]; gp[i].v1[3*k+2]=vel[2];
