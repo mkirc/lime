@@ -579,14 +579,14 @@ readOrBuildGrid(configInfo *par, struct grid **gp){
                     }
                 }
 
-                puts("Segfault after here");
+                /* puts("Segfault after here"); */
                 for(i=0;i<par->pIntensity;i++){
                     abundance((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],dummyPointer);
                     for(si=0;si<par->nSpecies;si++) {
                         (*gp)[i].mol[si].abun = dummyPointer[si];
                     }
                 }
-                puts("Segfault before here");
+                /* puts("Segfault before here"); */
                 for(i=par->pIntensity;i<par->ncell;i++){
                     for(si=0;si<par->nSpecies;si++)
                         (*gp)[i].mol[si].abun = 0.0;

@@ -777,12 +777,16 @@ readGrid(char *inFileName, struct gridInfoType *gridInfoRead\
 
     /* Some sanity checks:
     */
-    if((*dataFlags)!=0 && (gridInfoRead->nSinkPoints<=0 || gridInfoRead->nInternalPoints<=0 || gridInfoRead->nDims<=0)){
+    if((*dataFlags)!=0
+            && (gridInfoRead->nSinkPoints<=0
+                || gridInfoRead->nInternalPoints<=0
+                || gridInfoRead->nDims<=0)) {
         closeAndFree(fptr, firstNearNeigh, nnLinks, links, 0);
         freeGrid(totalNumGridPoints, gridInfoRead->nSpecies, *gp);
 
-        if(gridInfoRead->nSinkPoints<=0)
+        if(gridInfoRead->nSinkPoints<=0) {
             return 3;
+        }
         else if(gridInfoRead->nInternalPoints<=0)
             return 4;
         else if(gridInfoRead->nDims<=0)
