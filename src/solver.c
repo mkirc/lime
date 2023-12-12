@@ -6,7 +6,8 @@
  *  Copyright (C) 2015-2017 The LIME development team
  *
 TODO:
-- The test to run calculateJBar() etc in levelPops just tests dens[0]. This is a bit sloppy.
+- The test to run calculateJBar() etc in levelPops just tests dens[0]. This is
+a bit sloppy.
 */
 
 #include "lime.h"
@@ -16,7 +17,8 @@ TODO:
 #include <gsl/gsl_permutation.h>
 #include <gsl/gsl_errno.h>
 
-/* Data concerning a single grid vertex which is passed from calculateJBar() to solveStatEq(). This data needs to be thread-safe. */
+/* Data concerning a single grid vertex which is passed from calculateJBar() to
+ * solveStatEq(). This data needs to be thread-safe. */
 typedef struct {
     double *jbar,*phot,*vfac,*vfac_loc;
 } gridPointData;
@@ -78,9 +80,11 @@ freeGridPointData(const int nSpecies, gridPointData *mol){
 /*....................................................................*/
 void lineBlend(molData *m, configInfo *par, struct blendInfo *blends){
     /*
-       This obtains information on all the lines of all the radiating species which have other lines within some cutoff velocity separation.
+       This obtains information on all the lines of all the radiating species
+       which have other lines within some cutoff velocity separation.
 
-       A variable of type 'struct blendInfo' has a nested structure which can be illustrated diagrammaticaly as follows.
+       A variable of type 'struct blendInfo' has a nested structure which can
+       be illustrated diagrammaticaly as follows.
 
 Structs:	blendInfo		molWithBlends		lineWithBlends		blend
 
@@ -96,7 +100,8 @@ Variables:	blends
 |________|
 |   etc  |
 
-Pointers are indicated by a * before the attribute name and an arrow to the memory location pointed to.
+Pointers are indicated by a * before the attribute name and an arrow to the
+memory location pointed to.
 */
     int molI, lineI, molJ, lineJ;
     int nmwb, nlwb, numBlendsFound, li, bi;
@@ -104,7 +109,8 @@ Pointers are indicated by a * before the attribute name and an arrow to the memo
     struct blend *tempBlends=NULL;
     struct lineWithBlends *tempLines=NULL;
 
-    /* Dimension blends.mols first to the total number of species, then realloc later if need be.
+    /* Dimension blends.mols first to the total number of species, then realloc
+     * later if need be.
     */
     (*blends).mols = malloc(sizeof(struct molWithBlends)*par->nSpecies);
     (*blends).numMolsWithBlends = 0;
@@ -299,7 +305,10 @@ int
 getNextEdge(double *inidir, const int startGi, const int presentGi\
         , struct grid *gp, const gsl_rng *ran){
     /*
-       The idea here is to select for the next grid point, that one which lies closest (with a little randomizing jitter) to the photon track, while requiring the direction of the edge to be in the 'forward' hemisphere of the photon direction.
+       The idea here is to select for the next grid point, that one which lies
+       closest (with a little randomizing jitter) to the photon track, while
+       requiring the direction of the edge to be in the 'forward' hemisphere of
+       the photon direction.
 
        Note that this is called from within the multi-threaded block.
        */
@@ -307,7 +316,10 @@ getNextEdge(double *inidir, const int startGi, const int presentGi\
     double dirCos,distAlongTrack,dirFromStart[3],coord,distToTrackSquared,smallest=0.0,nextSmallest=0.0;
     const static double scatterReduction = 0.4;
     /*
-       This affects the ratio of N_2/N_1, where N_2 is the number of times the edge giving the 2nd-smallest distance from the photon track is chosen and N_1 ditto the smallest. Some ratio values obtained from various values of scatterReduction:
+       This affects the ratio of N_2/N_1, where N_2 is the number of times the
+       edge giving the 2nd-smallest distance from the photon track is chosen
+       and N_1 ditto the smallest. Some ratio values obtained from various
+       values of scatterReduction:
 
        scatterReduction	<N_2/N_1>
        1.0		  0.42
@@ -497,11 +509,17 @@ calculateJBar(int id, struct grid *gp, molData *md, const gsl_rng *ran\
 
         /* Photon propagation loop */
         numLinks=0;
-        while(!gp[here].sink){ /* Testing for sink at loop start is redundant for the first step, since we only start photons from non-sink points, but it makes for simpler code. */
+        /* Testing for sink at loop start is redundant for the first step,
+         * since we only start photons from non-sink points, but it makes for
+         * simpler code. */
+        while(!gp[here].sink){
             numLinks++;
             if(numLinks>par->ncell){
                 if(!silent){
-                    snprintf(message, STR_LEN_0, "Bad grid? Too many links in photon path, point %d photon %d", id, iphot);
+                    snprintf(message,
+                            STR_LEN_0,
+                            "Bad grid? Too many links in photon path, point %d photon %d",
+                            id, iphot);
                     bail_out(message);
                 }
                 exit(1);
@@ -525,14 +543,16 @@ calculateJBar(int id, struct grid *gp, molData *md, const gsl_rng *ran\
                     mp[molI].vfac[iphot]=vfac_out[molI];
                 }
                 /*
-                   Contribution of the local cell to emission and absorption is done in updateJBar.
-                   We only store the vfac for the local cell for use in ALI loops.
+                   Contribution of the local cell to emission and absorption is
+                   done in updateJBar.  We only store the vfac for the local
+                   cell for use in ALI loops.
                    */
                 here=there;
                 continue;
             }
 
-            /* If we've got to here, we have progressed beyond the first edge. Length of the new "in" edge is the length of the previous "out".
+            /* If we've got to here, we have progressed beyond the first edge.
+             * Length of the new "in" edge is the length of the previous "out".
             */
             ds_in=ds_out;
             ds_out=0.5*gp[here].ds[neighI]*dotProduct3D(inidir,gp[here].dir[neighI].xn);
@@ -557,7 +577,8 @@ calculateJBar(int id, struct grid *gp, molData *md, const gsl_rng *ran\
                     sourceFunc_line(&md[molI],vfac_out[molI],&(gp[here].mol[molI]),lineI,&jnu_line_out,&alpha_line_out);
                     sourceFunc_cont(gp[here].mol[molI].cont[lineI],&jnu_cont,&alpha_cont);
 
-                    /* cont and blend could use the same alpha and jnu counter, but maybe it's clearer this way */
+                    /* cont and blend could use the same alpha and jnu counter,
+                     * but maybe it's clearer this way */
 
                     /* Line blending part.
                     */
@@ -574,20 +595,38 @@ calculateJBar(int id, struct grid *gp, molData *md, const gsl_rng *ran\
                             else
                                 calcLineAmpLin(gp,here,neighI,molJ,velProj,inidir,&vblend_in,&vblend_out);
 
-                            /* we should use also the previous vblend_in, but I don't feel like writing the necessary code now */
+                            /* we should use also the previous vblend_in, but I
+                             * don't feel like writing the necessary code now
+                             * */
                             sourceFunc_line(&md[molJ],vblend_out,&(gp[here].mol[molJ]),lineJ,&jnu_blend,&alpha_blend);
-                            /* note that sourceFunc* increment jnu and alpha, they don't overwrite it  */
+                            /* note that sourceFunc* increment jnu and alpha,
+                             * they don't overwrite it  */
                         }
 
                         nextLineWithBlend++;
                         if(nextLineWithBlend>=blends.mols[nextMolWithBlend].numLinesWithBlends){
                             nextLineWithBlend = 0;
-                            /* The reason for doing this is as follows. Firstly, we only enter the present IF block if molI has at least 1 line which is blended with others; and further, if we have now processed all blended lines for that molecule. Thus no matter what value lineI takes for the present molecule, it won't appear as blends.mols[nextMolWithBlend].lines[i].lineI for any i. Yet we will still test blends.mols[nextMolWithBlend].lines[nextLineWithBlend], thus we want nextLineWithBlend to at least have a sensible value between 0 and blends.mols[nextMolWithBlend].numLinesWithBlends-1. We could set nextLineWithBlend to any number in this range in safety, but zero is simplest. */
+                            /* The reason for doing this is as follows.
+                             * Firstly, we only enter the present IF block if
+                             * molI has at least 1 line which is blended with
+                             * others; and further, if we have now processed
+                             * all blended lines for that molecule. Thus no
+                             * matter what value lineI takes for the present
+                             * molecule, it won't appear as
+                             * blends.mols[nextMolWithBlend].lines[i].lineI for
+                             * any i. Yet we will still test
+                             * blends.mols[nextMolWithBlend].lines[nextLineWithBlend],
+                             * thus we want nextLineWithBlend to at least have
+                             * a sensible value between 0 and
+                             * blends.mols[nextMolWithBlend].numLinesWithBlends-1.
+                             * We could set nextLineWithBlend to any number in
+                             * this range in safety, but zero is simplest. */
                         }
                     }
                     /* End of line blending part */
 
-                    /* as said above, out-in split should be done also for blended lines... */
+                    /* as said above, out-in split should be done also for
+                     * blended lines... */
 
                     dtau=(alpha_line_out+alpha_cont+alpha_blend)*ds_out;
                     if(dtau < -MAX_NEG_OPT_DEPTH) dtau = -MAX_NEG_OPT_DEPTH;
@@ -662,16 +701,33 @@ updateJBar(int posn, molData *md, struct grid *gp, const int molI\
                         molJ  = blends.mols[nextMolWithBlend].lines[nextLineWithBlend].blends[bi].molJ;
                         lineJ = blends.mols[nextMolWithBlend].lines[nextLineWithBlend].blends[bi].lineJ;
                         /*
-                           The next line is not quite correct, because vfac may be different for other molecules due to different values of binv. Unfortunately we don't necessarily have vfac for molJ available yet.
+                           The next line is not quite correct, because vfac may
+                           be different for other molecules due to different
+                           values of binv. Unfortunately we don't necessarily
+                           have vfac for molJ available yet.
                            */
                         sourceFunc_line(&md[molJ],mp[molI].vfac[iphot],&(gp[posn].mol[molJ]),lineJ,&jnu,&alpha);
-                        /* note that sourceFunc* increment jnu and alpha, they don't overwrite it  */
+                        /* note that sourceFunc* increment jnu and alpha, they
+                         * don't overwrite it  */
                     }
 
                     nextLineWithBlend++;
                     if(nextLineWithBlend>=blends.mols[nextMolWithBlend].numLinesWithBlends){
                         nextLineWithBlend = 0;
-                        /* The reason for doing this is as follows. Firstly, we only enter the present IF block if molI has at least 1 line which is blended with others; and further, if we have now processed all blended lines for that molecule. Thus no matter what value lineI takes for the present molecule, it won't appear as blends.mols[nextMolWithBlend].lines[i].lineI for any i. Yet we will still test blends.mols[nextMolWithBlend].lines[nextLineWithBlend], thus we want nextLineWithBlend to at least have a sensible value between 0 and blends.mols[nextMolWithBlend].numLinesWithBlends-1. We could set nextLineWithBlend to any number in this range in safety, but zero is simplest. */
+                        /* The reason for doing this is as follows. Firstly, we
+                         * only enter the present IF block if molI has at least
+                         * 1 line which is blended with others; and further, if
+                         * we have now processed all blended lines for that
+                         * molecule. Thus no matter what value lineI takes for
+                         * the present molecule, it won't appear as
+                         * blends.mols[nextMolWithBlend].lines[i].lineI for any
+                         * i. Yet we will still test
+                         * blends.mols[nextMolWithBlend].lines[nextLineWithBlend],
+                         * thus we want nextLineWithBlend to at least have a
+                         * sensible value between 0 and
+                         * blends.mols[nextMolWithBlend].numLinesWithBlends-1.
+                         * We could set nextLineWithBlend to any number in this
+                         * range in safety, but zero is simplest. */
                     }
                 }
                 /* End of line blending part */
@@ -726,7 +782,7 @@ getFixedMatrix(molData *md, int ispec, struct grid *gp, int id, gsl_matrix *coll
 
     /* Does this work with >1 coll. part? */
     double *ctot  = malloc(sizeof(double)*md[ispec].nlev);
-    for(k=0;k<md[ispec].nlev;k++){     
+    for(k=0;k<md[ispec].nlev;k++){
         ctot[k]=0.0;
         for(l=0;l<md[ispec].nlev;l++)
             ctot[k] += gsl_matrix_get(colli,k,l);
@@ -849,7 +905,7 @@ solveStatEq(int id, struct grid *gp, molData *md, const int ispec, configInfo *p
 
         getMatrix(matrix,md,ispec,mp,colli);
 
-        /* this could also be done in getFixedMatrix */ 
+        /* this could also be done in getFixedMatrix */
         for(s=0;s<md[ispec].nlev;s++){
             gsl_matrix_set(matrix,md[ispec].nlev-1,s,1.);
         }
@@ -934,7 +990,7 @@ levelPops(molData *md, configInfo *par, struct grid *gp, int *popsdone, double *
         gsl_rng *ran = gsl_rng_alloc(ranNumGenType);
         if(fixRandomSeeds)
             gsl_rng_set(ran, 1237106) ;
-        else 
+        else
             gsl_rng_set(ran,time(0));
 
         gsl_rng **threadRans;
@@ -974,13 +1030,20 @@ levelPops(molData *md, configInfo *par, struct grid *gp, int *popsdone, double *
 
         defaultErrorHandler = gsl_set_error_handler_off();
         /*
-           This is done to allow proper handling of errors which may arise in the LU solver within solveStatEq(). It is done here because the GSL documentation does not recommend leaving the error handler at the default within multi-threaded code.
+           This is done to allow proper handling of errors which may arise in
+           the LU solver within solveStatEq(). It is done here because the GSL
+           documentation does not recommend leaving the error handler at the
+           default within multi-threaded code.
 
-           While this is off however, other gsl_* etc calls will not exit if they encounter a problem. We may need to pay some attention to trapping their errors.
+           While this is off however, other gsl_* etc calls will not exit if
+           they encounter a problem. We may need to pay some attention to
+           trapping their errors.
            */
 
         nItersDone = par->nSolveItersDone;
-        while(nItersDone < par->nSolveIters){ /* Not a 'for' loop because we will probably later want to add a convergence criterion. */
+        /* Not a 'for' loop because we will probably later want to add a
+         * convergence criterion. */
+        while(nItersDone < par->nSolveIters){
             if(!silent) progressbar2(par, 0, nItersDone, 0, result1, result2);
 
             for(id=0;id<par->pIntensity;id++){
@@ -1045,7 +1108,10 @@ levelPops(molData *md, configInfo *par, struct grid *gp, int *popsdone, double *
             } /* end parallel block. */
 
             if(!silent && totalNMaserWarnings>0){
-                snprintf(message, STR_LEN_0, "Maser warning: optical depth dropped below -%4.1f %d times this iteration.", MAX_NEG_OPT_DEPTH, totalNMaserWarnings);
+                snprintf(message,
+                        STR_LEN_0,
+                        "Maser warning: optical depth dropped below -%4.1f %d times this iteration.",
+                        MAX_NEG_OPT_DEPTH, totalNMaserWarnings);
                 warning(message);
             }
 
@@ -1079,7 +1145,9 @@ levelPops(molData *md, configInfo *par, struct grid *gp, int *popsdone, double *
             c=0;
             for(id=0;id<par->pIntensity;id++){
                 for(ilev=0;ilev<md[0].nlev;ilev++){
-                    if(gp[id].mol[0].pops[ilev] > 1e-12) median[c++]=gp[id].mol[0].pops[ilev]/stat[id].sigma[ilev];
+                    if(gp[id].mol[0].pops[ilev] > 1e-12) {
+                        median[c++]=gp[id].mol[0].pops[ilev]/stat[id].sigma[ilev];
+                    }
                 }
             }
 

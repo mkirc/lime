@@ -12,9 +12,15 @@
 /*....................................................................*/
 void stokesangles(double B[3], double (*rotMat)[3], double *trigFuncs){
     /*
-       This function rotates the B-field vector from the model frame to the observer frame, then calculates and returns some useful values which will in function sourceFunc_pol() make it easy to obtain the Stokes parameters of polarized submillimetre dust emission. (For an explanation of the reasons for choosing the particular quantities we do, see the comment in that function.)
+       This function rotates the B-field vector from the model frame to the observer
+       frame, then calculates and returns some useful values which will in function
+       sourceFunc_pol() make it easy to obtain the Stokes parameters of polarized
+       submillimetre dust emission. (For an explanation of the reasons for choosing the
+       particular quantities we do, see the comment in that function.)
 
-       Whenever one deals with polarized light, it is important to specify the coordinate systems carefully. In LIME the observer frame is defined such that, when the observer looks at the sky, the frame axes appear as follows:
+       Whenever one deals with polarized light, it is important to specify the
+       coordinate systems carefully. In LIME the observer frame is defined such that,
+       when the observer looks at the sky, the frame axes appear as follows:
 
        ^ Y
        |
@@ -23,7 +29,9 @@ void stokesangles(double B[3], double (*rotMat)[3], double *trigFuncs){
        <------+
        X
 
-       The Z axis points into the page, away from the observer. Comparing this to normal astronomical coordinates one can see that X is in the direction of +ve right ascension and Y in the direction of +ve declination.
+       The Z axis points into the page, away from the observer. Comparing this to normal
+       astronomical coordinates one can see that X is in the direction of +ve right
+       ascension and Y in the direction of +ve declination.
 
        The IAU-recommended coordinate frame for expressing polarized light however is
 
@@ -34,9 +42,14 @@ void stokesangles(double B[3], double (*rotMat)[3], double *trigFuncs){
        <------O
        Y
 
-       with Z now emerging from the page (i.e pointing in the direction of propagation, towards the observer).
+       with Z now emerging from the page (i.e pointing in the direction of propagation,
+       towards the observer).
 
-       A vector defined in the LIME model basis can be converted to the observer basis by post-multiplying it with the image rotation matrix rotMat. (Another way of putting this is that the rows of rotMat are the unit vectors of the model coordinate frame expressed in the observer basis.) For the B field, this is expressed symbolically as
+       A vector defined in the LIME model basis can be converted to the observer basis
+       by post-multiplying it with the image rotation matrix rotMat. (Another way of
+       putting this is that the rows of rotMat are the unit vectors of the model
+       coordinate frame expressed in the observer basis.) For the B field, this is
+       expressed symbolically as
 
        Bp^T = B^T * rotMat
 
@@ -120,7 +133,9 @@ void sourceFunc_pol(double B[3], const struct continuumLine cont\
 
        Padovani, M. et al, A&A 543, A16 (2012)
 
-       and references therein. However, as pointed out in Ade, P. A. R. et al, A&A 576, A105 (2015), Padovani's expression for sigma2 is too small by a factor of 2. This correction has been propagated here.
+       and references therein. However, as pointed out in Ade, P. A. R. et al, A&A 576,
+       A105 (2015), Padovani's expression for sigma2 is too small by a factor of 2. This
+       correction has been propagated here.
 
        Note that this is called from within a multi-threaded block.
        */

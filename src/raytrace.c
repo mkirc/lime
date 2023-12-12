@@ -6,8 +6,13 @@
  *  Copyright (C) 2015-2017 The LIME development team
  *
 TODO:
-- In raytrace(), look at rearranging the code to do the qhull step before choosing the rays. This would allow cells with all vertices outside the image boundaries to be excluded. If the image is much smaller than the model, this could lead to significant savings in time. The only downside might be memory useage...
-- In raytrace(), for par->traceRayAlgorithm==1, in theory we could deduce the cell geometry via the grid-point neighbour linkage, without needing to call delaunay() again.
+- In raytrace(), look at rearranging the code to do the qhull step before
+choosing the rays. This would allow cells with all vertices outside the image
+boundaries to be excluded. If the image is much smaller than the model, this
+could lead to significant savings in time. The only downside might be memory
+useage...  - In raytrace(), for par->traceRayAlgorithm==1, in theory we could
+deduce the cell geometry via the grid-point neighbour linkage, without needing
+to call delaunay() again.
 */
 
 #include "lime.h"
@@ -81,7 +86,11 @@ calcLineAmpSample(const double x[3], const double dx[3], const double ds\
         , const double binv, double *projVels, const int nSteps\
         , const double oneOnNSteps, const double deltav, double *vfac){
     /*
-       The bulk velocity of the model material can vary significantly with position, thus so can the value of the line-shape function at a given frequency and direction. The present function calculates 'vfac', an approximate average of the line-shape function along a path of length ds in the direction of the line of sight.
+       The bulk velocity of the model material can vary significantly with
+       position, thus so can the value of the line-shape function at a given
+       frequency and direction. The present function calculates 'vfac', an
+       approximate average of the line-shape function along a path of length ds
+       in the direction of the line of sight.
 
        Note that this is called from within the multi-threaded block.
        */
@@ -90,7 +99,15 @@ calcLineAmpSample(const double x[3], const double dx[3], const double ds\
 
     *vfac=0.;
     for(i=0;i<nSteps;i++){
-        v = deltav - projVels[i]; /* projVels contains the component of the local bulk velocity in the direction of dx, whereas deltav is the recession velocity of the channel we are interested in (corrected for bulk source velocity and line displacement from the nominal frequency). Remember also that, since dx points away from the observer, positive values of the projected velocity also represent recessions. Line centre occurs when v==0, i.e. when deltav==dotProduct3D(dx,vel). That is the reason for the subtraction here. */
+        /* projVels contains the component of the local bulk velocity in the
+         * direction of dx, whereas deltav is the recession velocity of the
+         * channel we are interested in (corrected for bulk source velocity and
+         * line displacement from the nominal frequency). Remember also that,
+         * since dx points away from the observer, positive values of the
+         * projected velocity also represent recessions. Line centre occurs
+         * when v==0, i.e. when deltav==dotProduct3D(dx,vel). That is the
+         * reason for the subtraction here. */
+        v = deltav - projVels[i];
         val=fabs(v)*binv;
         if(val <=  2500.){
 #ifdef FASTEXP
@@ -109,13 +126,23 @@ void
 calcLineAmpInterp(const double projVelRay, const double binv\
         , const double deltav, double *vfac){
     /*
-       The bulk velocity of the model material can vary significantly with position, thus so can the value of the line-shape function at a given frequency and direction. The present function calculates 'vfac', an approximate average of the line-shape function along a path of length ds in the direction of the line of sight.
+       The bulk velocity of the model material can vary significantly with
+       position, thus so can the value of the line-shape function at a given
+       frequency and direction. The present function calculates 'vfac', an
+       approximate average of the line-shape function along a path of length ds
+       in the direction of the line of sight.
 
        Note that this is called from within the multi-threaded block.
        */
     double v,val;
-
-    v = deltav - projVelRay; /* projVelRay is the component of the local bulk velocity in the direction of the ray, whereas deltav is the recession velocity of the channel we are interested in (corrected for bulk source velocity and line displacement from the nominal frequency). Remember also that, since the ray points away from the observer, positive values of the projected velocity also represent recessions. Line centre occurs when v==0, i.e. when deltav==projVelRay. That is the reason for the subtraction here. */
+    /* projVelRay is the component of the local bulk velocity in the direction
+     * of the ray, whereas deltav is the recession velocity of the channel we
+     * are interested in (corrected for bulk source velocity and line
+     * displacement from the nominal frequency). Remember also that, since the
+     * ray points away from the observer, positive values of the projected
+     * velocity also represent recessions. Line centre occurs when v==0, i.e.
+     * when deltav==projVelRay. That is the reason for the subtraction here. */
+    v = deltav - projVelRay;
     val = fabs(v)*binv;
     if(val <=  2500.){
 #ifdef FASTEXP
@@ -132,13 +159,23 @@ void
 calcLineAmpErf(const double projVelOld, const double projVelNew, const double binv\
         , const double deltav, const double segmentLen, double *vfac){
     /*
-       The bulk velocity of the model material can vary significantly with position, thus so can the value of the line-shape function at a given frequency and direction. The present function calculates 'vfac', an approximate average of the line-shape function along a path of length ds in the direction of the line of sight.
+       The bulk velocity of the model material can vary significantly with
+       position, thus so can the value of the line-shape function at a given
+       frequency and direction. The present function calculates 'vfac', an
+       approximate average of the line-shape function along a path of length ds
+       in the direction of the line of sight.
 
        Note that this is called from within the multi-threaded block.
        */
     double vbOld,vbNew;
-
-    vbOld = binv*(deltav - projVelOld); /* projVelOld etc are components of the local bulk velocity in the direction of the ray, whereas deltav is the recession velocity of the channel we are interested in (corrected for bulk source velocity and line displacement from the nominal frequency). Remember also that, since the ray points away from the observer, positive values of the projected velocity also represent recessions. Line centre occurs when v==0, i.e. when deltav==projVelRay. That is the reason for the subtraction here. */
+    /* projVelOld etc are components of the local bulk velocity in the
+     * direction of the ray, whereas deltav is the recession velocity of the
+     * channel we are interested in (corrected for bulk source velocity and
+     * line displacement from the nominal frequency). Remember also that, since
+     * the ray points away from the observer, positive values of the projected
+     * velocity also represent recessions. Line centre occurs when v==0, i.e.
+     * when deltav==projVelRay. That is the reason for the subtraction here. */
+    vbOld = binv*(deltav - projVelOld);
     vbNew = binv*(deltav - projVelNew);
 
     if (fabs(vbNew-vbOld)>(2.0*BIN_WIDTH))
@@ -152,7 +189,10 @@ void
 line_plane_intersect(struct grid *gp, double *ds, int posn, int *nposn\
         , double *dx, double *x, double cutoff){
     /*
-       This function returns ds as the (always positive-valued) distance between the present value of x and the next Voronoi face in the direction of vector dx, and nposn as the id of the grid cell that abuts that face. 
+       This function returns ds as the (always positive-valued) distance
+       between the present value of x and the next Voronoi face in the
+       direction of vector dx, and nposn as the id of the grid cell that abuts
+       that face. 
 
        Note that this is called from within the multi-threaded block.
        */
@@ -160,7 +200,8 @@ line_plane_intersect(struct grid *gp, double *ds, int posn, int *nposn\
     int i;
 
     for(i=0;i<gp[posn].numNeigh;i++) {
-        /* Find the shortest distance between (x,y,z) and any of the posn Voronoi faces */
+        /* Find the shortest distance between (x,y,z) and any of the posn
+         * Voronoi faces */
         /* ds=(p0-l0) dot n / l dot n */
 
         numerator=((gp[posn].x[0]+gp[posn].dir[i].x[0]/2. - x[0]) * gp[posn].dir[i].x[0]+
@@ -186,9 +227,17 @@ traceray(rayData ray, const int im\
         , configInfo *par, struct grid *gp, molData *md, imageInfo *img\
         , const double cutoff, const int nSteps, const double oneOnNSteps){
     /*
-       For a given image pixel position, this function evaluates the intensity of the total light emitted/absorbed along that line of sight through the (possibly rotated) model. The calculation is performed for several frequencies, one per channel of the output image.
+       For a given image pixel position, this function evaluates the intensity
+       of the total light emitted/absorbed along that line of sight through the
+       (possibly rotated) model. The calculation is performed for several
+       frequencies, one per channel of the output image.
 
-       Note that the algorithm employed here is similar to that employed in the function calculateJBar() which calculates the average radiant flux impinging on a grid cell: namely the notional photon is started at the side of the model near the observer and 'propagated' in the receding direction until it 'reaches' the far side. This is rather non-physical in conception but it makes the calculation easier.
+       Note that the algorithm employed here is similar to that employed in the
+       function calculateJBar() which calculates the average radiant flux
+       impinging on a grid cell: namely the notional photon is started at the
+       side of the model near the observer and 'propagated' in the receding
+       direction until it 'reaches' the far side. This is rather non-physical
+       in conception but it makes the calculation easier.
 
        Note that this is called from within the multi-threaded block.
 
@@ -211,12 +260,15 @@ traceray(rayData ray, const int im\
     xp=ray.x;
     yp=ray.y;
 
-    /* The model is circular in projection. We only follow the ray if it will intersect the model.
+    /* The model is circular in projection. We only follow the ray if it will
+     * intersect the model.
     */
     if((xp*xp+yp*yp)>par->radiusSqu)
         return;
-
-    zp=-sqrt(par->radiusSqu-(xp*xp+yp*yp)); /* There are two points of intersection between the line of sight and the spherical model surface; this is the Z coordinate (in the unrotated frame) of the one nearer to the observer. */
+    /* There are two points of intersection between the line of sight and the
+     * spherical model surface; this is the Z coordinate (in the unrotated
+     * frame) of the one nearer to the observer. */
+    zp=-sqrt(par->radiusSqu-(xp*xp+yp*yp));
 
     /* Rotate the line of sight as desired. */
     for(di=0;di<DIM;di++){
@@ -238,9 +290,14 @@ traceray(rayData ray, const int im\
 
     col=0;
     do{
-        ds=-2.*zp-col; /* This default value is chosen to be as large as possible given the spherical model boundary. */
+        /* This default value is chosen to be as large as possible given the
+         * spherical model boundary. */
+        ds=-2.*zp-col;
         nposn=-1;
-        line_plane_intersect(gp,&ds,posn,&nposn,dx,x,cutoff); /* Reads gp attributes numNeigh, x, dir, neigh. Returns a new ds equal to the distance to the next Voronoi face, and nposn, the ID of the grid cell that abuts that face. */
+        /* Reads gp attributes numNeigh, x, dir, neigh. Returns a new ds equal
+         * to the distance to the next Voronoi face, and nposn, the ID of the
+         * grid cell that abuts that face. */
+        line_plane_intersect(gp,&ds,posn,&nposn,dx,x,cutoff);
 
         if(par->polarization){ /* Should also imply img[im].doline==0. */
             sourceFunc_pol(gp[posn].B, gp[posn].cont, img[im].rotMat, snu_pol, &alpha);
@@ -266,7 +323,8 @@ traceray(rayData ray, const int im\
                 }
             }
 
-            /* Calculate first the continuum stuff because it is the same for all channels:
+            /* Calculate first the continuum stuff because it is the same for
+             * all channels:
             */
             contJnu = 0.0;
             contAlpha = 0.0;
@@ -275,14 +333,17 @@ traceray(rayData ray, const int im\
             for(ichan=0;ichan<img[im].nchan;ichan++){
                 jnu = contJnu;
                 alpha = contAlpha;
-                vThisChan = (ichan-(img[im].nchan-1)*0.5)*img[im].velres; /* Consistent with the WCS definition in writefits(). */
+                /* Consistent with the WCS definition in writefits(). */
+                vThisChan = (ichan-(img[im].nchan-1)*0.5)*img[im].velres;
 
                 if(img[im].doline){
                     for(molI=0;molI<par->nSpecies;molI++){
                         for(lineI=0;lineI<md[molI].nline;lineI++){
                             if(md[molI].freq[lineI] > img[im].freq-img[im].bandwidth*0.5\
                                     && md[molI].freq[lineI] < img[im].freq+img[im].bandwidth*0.5){
-                                /* Calculate the red shift of the transition wrt to the frequency specified for the image.
+                                /* Calculate the red shift of the transition
+                                 * wrt to the frequency specified for the
+                                 * image.
                                 */
                                 if(img[im].trans > -1){
                                     lineRedShift=(md[molI].freq[img[im].trans]-md[molI].freq[lineI])/md[molI].freq[img[im].trans]*CLIGHT;
@@ -291,15 +352,37 @@ traceray(rayData ray, const int im\
                                 }
 
                                 deltav = vThisChan - img[im].source_vel - lineRedShift;
-                                /* Line centre occurs when deltav = the recession velocity of the radiating material. Explanation of the signs of the 2nd and 3rd terms on the RHS: (i) A bulk source velocity (which is defined as >0 for the receding direction) should be added to the material velocity field; this is equivalent to subtracting it from deltav, as here. (ii) A positive value of lineRedShift means the line is red-shifted wrt to the frequency specified for the image. The effect is the same as if the line and image frequencies were the same, but the bulk recession velocity were higher. lineRedShift should thus be added to the recession velocity, which is equivalent to subtracting it from deltav, as here. */
+                                /* Line centre occurs when deltav = the
+                                 * recession velocity of the radiating
+                                 * material. Explanation of the signs of the
+                                 * 2nd and 3rd terms on the RHS: (i) A bulk
+                                 * source velocity (which is defined as >0 for
+                                 * the receding direction) should be added to
+                                 * the material velocity field; this is
+                                 * equivalent to subtracting it from deltav, as
+                                 * here. (ii) A positive value of lineRedShift
+                                 * means the line is red-shifted wrt to the
+                                 * frequency specified for the image. The
+                                 * effect is the same as if the line and image
+                                 * frequencies were the same, but the bulk
+                                 * recession velocity were higher. lineRedShift
+                                 * should thus be added to the recession
+                                 * velocity, which is equivalent to subtracting
+                                 * it from deltav, as here. */
 
-                                /* Calculate an approximate average line-shape function at deltav within the Voronoi cell. */
-                                if(par->useVelFuncInRaytrace) /* because only in this case do we have projVels. */
+                                /* Calculate an approximate average line-shape
+                                 * function at deltav within the Voronoi cell.
+                                 * */
+                                if(par->useVelFuncInRaytrace)
+                                    /* because only in this case do we have
+                                     * projVels. */
                                     calcLineAmpSample(x,dx,ds,gp[posn].mol[molI].binv,projVels,nSteps,oneOnNSteps,deltav,&vfac);
                                 else
                                     vfac = gaussline(deltav-dotProduct3D(dx,gp[posn].vel),gp[posn].mol[molI].binv);
 
-                                /* Increment jnu and alpha for this Voronoi cell by the amounts appropriate to the spectral line. */
+                                /* Increment jnu and alpha for this Voronoi
+                                 * cell by the amounts appropriate to the
+                                 * spectral line. */
                                 sourceFunc_line(&md[molI],vfac,&(gp[posn].mol[molI]),lineI,&jnu,&alpha);
                             }
                         }
@@ -307,7 +390,8 @@ traceray(rayData ray, const int im\
                 } /* end if(img[im].doline) */
 
                 dtau=alpha*ds;
-                /* Should we check for overly strong masers as in calculateJBar()?
+                /* Should we check for overly strong masers as in
+                 * calculateJBar()?
                    if(dtau < -30) dtau = -30;  
                    */
                 calcSourceFn(dtau, par, &remnantSnu, &expDTau);
@@ -335,16 +419,27 @@ doBaryInterp(const intersectType intcpt, struct grid *gp\
         , double xCmpntsRay[3], unsigned long gis[3]\
         , molData *md, const int numMols, gridInterp *gip){
     /*
-       The present routine takes (i) N values V_i at the vertices of a simplex, and (ii) the barycentric coordinates of a point, and returns a linear interpolation of the vertex values for the point location. This is essentially the same technique as the use of linear shape functions in Finite Element analysis. The idea is that if you define N shape functions Q_i, the ith shape function having the property that it is zero-valued at each of the vertices except the ith, and has value unity there, then the interpolation value at point r_ is given by
+       The present routine takes (i) N values V_i at the vertices of a simplex,
+       and (ii) the barycentric coordinates of a point, and returns a linear
+       interpolation of the vertex values for the point location. This is
+       essentially the same technique as the use of linear shape functions in
+       Finite Element analysis. The idea is that if you define N shape
+       functions Q_i, the ith shape function having the property that it is
+       zero-valued at each of the vertices except the ith, and has value unity
+       there, then the interpolation value at point r_ is given by
 
        _N
        \
        f(r_) =  >    V_i*Q_i(r_).
        /_i=1
 
-       For a linear interpolation, each shape function Q_i(r_) is in fact just equal to the ith barycentric coordinate B_i of r_.
+       For a linear interpolation, each shape function Q_i(r_) is in fact just
+       equal to the ith barycentric coordinate B_i of r_.
 
-       In the present case, N==3, the simplex is a triangular face of a Delaunay cell, and the point at which we desire the interpolated value is the intersection of a ray with that face. Several grid quantities of interest are interpolated.
+       In the present case, N==3, the simplex is a triangular face of a
+       Delaunay cell, and the point at which we desire the interpolated value
+       is the intersection of a ray with that face. Several grid quantities of
+       interest are interpolated.
 
        For a readable definition of barycentric coordinates, see the wikipedia article of that name.
 
@@ -362,8 +457,10 @@ doBaryInterp(const intersectType intcpt, struct grid *gp\
                        + intcpt.bary[2]*gp[gis[2]].x[di];
     }
 
-    for(di=0;di<3;di++){ /* 3 not DIM, because a B field only makes sense in 3 dimensions. */
-        /* ****** Maybe some test of DIM==3?? Would need to be systematic across the entire code..? */
+    /* 3 not DIM, because a B field only makes sense in 3 dimensions. */
+    for(di=0;di<3;di++){
+        /* ****** Maybe some test of DIM==3?? Would need to be systematic
+         * across the entire code..? */
         (*gip).B[di] = intcpt.bary[0]*gp[gis[0]].B[di]\
                        + intcpt.bary[1]*gp[gis[1]].B[di]\
                        + intcpt.bary[2]*gp[gis[2]].B[di];
@@ -488,21 +585,34 @@ void
 doBaryInterpsVel(const int numDims, struct baryVelBuffType *ptrToBuff\
         , _Bool doRay[3], double rayVels[3][numDims]){
     /*
-       In this function we take (vector) velocities at 4 locations describing a tetrahedral Delaunay cell, plus 6 additional velocity values at the half-way points along each of the 6 edges of the cell, plus entry and exit (barycentric) locations of a ray passing through the cell, and return an interpolated value of the velocities at the entry and exit points, as well as at a point half-way between them.
+       In this function we take (vector) velocities at 4 locations describing a
+       tetrahedral Delaunay cell, plus 6 additional velocity values at the
+       half-way points along each of the 6 edges of the cell, plus entry and
+       exit (barycentric) locations of a ray passing through the cell, and
+       return an interpolated value of the velocities at the entry and exit
+       points, as well as at a point half-way between them.
 
-       This is similar to doBaryInterp() except that a quadratic interpolation is done rather than a linear one. For this we need values not just at the N vertices but also half-way along the N(N-1)/2 edges. The shape function Q_i which has value unity at the ith vertex and zero at all the other vertices, and also at the half-edge points, is given by
+       This is similar to doBaryInterp() except that a quadratic interpolation
+       is done rather than a linear one. For this we need values not just at
+       the N vertices but also half-way along the N(N-1)/2 edges. The shape
+       function Q_i which has value unity at the ith vertex and zero at all the
+       other vertices, and also at the half-edge points, is given by
 
        Q_i(r_) = B_i(2*B_i - 1).
 
-       For the point ij half-way between vertices i and j the appropriate shape function is
+       For the point ij half-way between vertices i and j the appropriate shape
+       function is
 
        Q_ij(r_) = 4*B_i*B_j.
 
-       The interpolated value at r_ is, as before, the sum of the values at the vertices and the half-edge points, each multiplied by its associated shape function.
+       The interpolated value at r_ is, as before, the sum of the values at the
+       vertices and the half-edge points, each multiplied by its associated
+       shape function.
 
        In the present case, N==4, so there are 6 half-edge points.
 
-       The remaining difference between the present function and doBaryInterp() is that here we only interpolate velocity.
+       The remaining difference between the present function and doBaryInterp()
+       is that here we only interpolate velocity.
 
        Note that this is called from within the multi-threaded block.
        */
@@ -522,7 +632,12 @@ void
 doSegmentInterpVector(const int numDims, const double rayVels[3][numDims]\
         , const double x, double vel[numDims]){
     /*
-       This function is supplied with values of velocity at the beginning, end and midpoint of the line segment which represents the passage of a ray through a cell (stored in that order in the input array 'rayVels'); what it does is perform a 2nd-order (i.e. quadratic) interpolation to obtain an estimate of the velocity at the given displacement along the line segment (returned in the array 'vel').
+       This function is supplied with values of velocity at the beginning, end
+       and midpoint of the line segment which represents the passage of a ray
+       through a cell (stored in that order in the input array 'rayVels'); what
+       it does is perform a 2nd-order (i.e. quadratic) interpolation to obtain
+       an estimate of the velocity at the given displacement along the line
+       segment (returned in the array 'vel').
 
        Given y0, y1 and y2 at x0, x1 and x2, the Lagrange interpolating polynomial is
 
@@ -530,7 +645,8 @@ doSegmentInterpVector(const int numDims, const double rayVels[3][numDims]\
        y ~ y0*-------*------- + y1*-------*------- + y2*-------*-------.
        x0-x1   x0-x2        x1-x0   x1-x2        x2-x0   x2-x1
 
-       If we calculate x as a fractional value along the line segment then, for the y values we have in hand, this reduces to
+       If we calculate x as a fractional value along the line segment then, for
+       the y values we have in hand, this reduces to
 
        y ~ y0*(x-1)*(2x-1) + y1*x*(2x-1) + y2*4x*(1-x).
 
@@ -551,7 +667,10 @@ doSegmentInterpVector(const int numDims, const double rayVels[3][numDims]\
 /*....................................................................*/
 double doSegmentInterpScalar(const double ys[3], const double x){
     /*
-       This function is supplied with values of y at the beginning, end and midpoint of the line segment; what it does is perform a 2nd-order (i.e. quadratic) interpolation to obtain an estimate of y at the given fractional displacement along the line segment.
+       This function is supplied with values of y at the beginning, end and
+       midpoint of the line segment; what it does is perform a 2nd-order (i.e.
+       quadratic) interpolation to obtain an estimate of y at the given
+       fractional displacement along the line segment.
 
        Given y0, y1 and y2 at x0, x1 and x2, the Lagrange interpolating polynomial is
 
@@ -559,7 +678,8 @@ double doSegmentInterpScalar(const double ys[3], const double x){
        y ~ y0*-------*------- + y1*-------*------- + y2*-------*-------.
        x0-x1   x0-x2        x1-x0   x1-x2        x2-x0   x2-x1
 
-       If x is the fractional distance along the line segment, then for the y values we have in hand, this reduces to
+       If x is the fractional distance along the line segment, then for the y
+       values we have in hand, this reduces to
 
        y ~ y0*(x-1)*(2x-1) + y1*x*(2x-1) + y2*4x*(1-x).
 
@@ -585,13 +705,34 @@ traceray_smooth(rayData ray, const int im\
         , const double epsilon, gridInterp gips[3], struct baryVelBuffType *ptrToBuff\
         , const int numSegments, const double oneOnNumSegments){
     /*
-       For a given image pixel position, this function evaluates the intensity of the total light emitted/absorbed along that line of sight through the (possibly rotated) model. The calculation is performed for several frequencies, one per channel of the output image.
+       For a given image pixel position, this function evaluates the intensity
+       of the total light emitted/absorbed along that line of sight through the
+       (possibly rotated) model. The calculation is performed for several
+       frequencies, one per channel of the output image.
 
-       Note that the algorithm employed here to solve the RTE is similar to that employed in the function calculateJBar() which calculates the average radiant flux impinging on a grid cell: namely the notional photon is started at the side of the model near the observer and 'propagated' in the receding direction until it 'reaches' the far side. This is rather non-physical in conception but it makes the calculation easier.
+       Note that the algorithm employed here to solve the RTE is similar to
+       that employed in the function calculateJBar() which calculates the
+       average radiant flux impinging on a grid cell: namely the notional
+       photon is started at the side of the model near the observer and
+       'propagated' in the receding direction until it 'reaches' the far side.
+       This is rather non-physical in conception but it makes the calculation
+       easier.
 
-       This version of traceray implements a new algorithm in which the population values are interpolated linearly from those at the vertices of the Delaunay cell which the working point falls within.
+       This version of traceray implements a new algorithm in which the
+       population values are interpolated linearly from those at the vertices
+       of the Delaunay cell which the working point falls within.
 
-       A note about the object 'gips': this is an array with 3 elements, each one a struct of type 'gridInterp'. This struct is meant to store as many of the grid-point quantities (interpolated from the appropriate values at actual grid locations) as are necessary for solving the radiative transfer equations along the ray path. The first 2 entries give the values for the entry and exit points to a Delaunay cell, but which is which can change, and is indicated via the variables entryI and exitI (this is a convenience to avoid copying the values, since the values for the exit point of one cell are obviously just those for entry point of the next). The third entry stores values interpolated along the ray path within a cell.
+       A note about the object 'gips': this is an array with 3 elements, each
+       one a struct of type 'gridInterp'. This struct is meant to store as many
+       of the grid-point quantities (interpolated from the appropriate values
+       at actual grid locations) as are necessary for solving the radiative
+       transfer equations along the ray path. The first 2 entries give the
+       values for the entry and exit points to a Delaunay cell, but which is
+       which can change, and is indicated via the variables entryI and exitI
+       (this is a convenience to avoid copying the values, since the values for
+       the exit point of one cell are obviously just those for entry point of
+       the next). The third entry stores values interpolated along the ray path
+       within a cell.
 
        Note that this is called from within the multi-threaded block.
        */
@@ -619,12 +760,16 @@ traceray_smooth(rayData ray, const int im\
     xp=ray.x;
     yp=ray.y;
 
-    /* The model is circular in projection. We only follow the ray if it will intersect the model.
+    /* The model is circular in projection. We only follow the ray if it will
+     * intersect the model.
     */
     if((xp*xp+yp*yp)>par->radiusSqu)
         return;
 
-    zp=-sqrt(par->radiusSqu-(xp*xp+yp*yp)); /* There are two points of intersection between the line of sight and the spherical model surface; this is the Z coordinate (in the unrotated frame) of the one nearer to the observer. */
+    /* There are two points of intersection between the line of sight and the
+     * spherical model surface; this is the Z coordinate (in the unrotated
+     * frame) of the one nearer to the observer. */
+    zp=-sqrt(par->radiusSqu-(xp*xp+yp*yp));
 
     /* Rotate the line of sight as desired. */
     for(di=0;di<DIM;di++){
@@ -645,7 +790,15 @@ traceray_smooth(rayData ray, const int im\
 
     if(img[im].doline && img[im].doInterpolateVels){
         /*
-           There is a problem when we want to copy cell-centric barycentric coords (BCs) for the entry face of all but the first cell in the chain when all we have to work with is the exit intercept (which includes face-centric BCs). This occurs because the order of the BCs in the exit cell corresponds to the order of the vertices in the cell it exits from, but we need the order for the cell entered. Thus we construct here an array of length lenChainPtrs-1 which gives a key to the exited-face vertices from the entered-face ones, and also stores the opposite-face vertex of the entered cell.
+           There is a problem when we want to copy cell-centric barycentric
+           coords (BCs) for the entry face of all but the first cell in the
+           chain when all we have to work with is the exit intercept (which
+           includes face-centric BCs). This occurs because the order of the BCs
+           in the exit cell corresponds to the order of the vertices in the
+           cell it exits from, but we need the order for the cell entered. Thus
+           we construct here an array of length lenChainPtrs-1 which gives a
+           key to the exited-face vertices from the entered-face ones, and also
+           stores the opposite-face vertex of the entered cell.
            */
         interCellKey = malloc(sizeof(*interCellKey)*(lenChainPtrs-1));
         dci1 = chainOfCellIds[0];
@@ -653,7 +806,8 @@ traceray_smooth(rayData ray, const int im\
             dci0 = dci1;
             dci1 = chainOfCellIds[ci+1];
 
-            /* Obtain the indices of the grid points on the vertices of the exited face.
+            /* Obtain the indices of the grid points on the vertices of the
+             * exited face.
             */
             vvi = 0;
             for(fi=0;fi<numFaces;fi++){
@@ -662,9 +816,13 @@ traceray_smooth(rayData ray, const int im\
                 }
             }
 
-            /* Now we run through all vertices of the entered cell and attempt to match the gis.
+            /* Now we run through all vertices of the entered cell and attempt
+             * to match the gis.
             */
-            interCellKey[ci].fiEnteredCell = -1; /* This flags that no opposite vertex was found - indicates a bug somewhere. */
+
+            /* This flags that no opposite vertex was found - indicates a bug
+             * somewhere. */
+            interCellKey[ci].fiEnteredCell = -1;
             vvi = 0;
             for(vi=0;vi<(*ptrToBuff).numVertices;vi++){
                 trialGi = dc[dci1].vertx[vi];
@@ -703,18 +861,33 @@ traceray_smooth(rayData ray, const int im\
         }
     }
 
-    /* Calculate, for each of the 3 vertices of the entry face, the displacement components in the direction of 'dir'. *** NOTE *** that if all the rays are parallel, we could precalculate these for all the vertices.
+    /* Calculate, for each of the 3 vertices of the entry face, the
+     * displacement components in the direction of 'dir'. *** NOTE *** that if
+     * all the rays are parallel, we could precalculate these for all the
+     * vertices.
     */
     for(vi=0;vi<nVertPerFace;vi++)
         xCmpntsRay[vi] = dotProduct3D(dir, gp[gis[entryI][vi]].x);
 
-    /* Calculate the values (via linear interpolation) of necessary grid quantities for the entry point to the first cell:
+    /* Calculate the values (via linear interpolation) of necessary grid
+     * quantities for the entry point to the first cell:
     */
     doBaryInterp(entryIntcptFirstCell, gp, xCmpntsRay, gis[entryI]\
             , md, par->nSpecies, &gips[entryI]);
 
     for(ci=0;ci<lenChainPtrs;ci++){
-        /* For each cell we have 2 data structures which give information about respectively the entry and exit points of the ray, including the barycentric coordinates of the intersection point between the ray and the appropriate face of the cell. (If we follow rays in 3D space then the cells will be tetrahedra and the faces triangles.) If we know the value of a quantity Q for each of the vertices, then the linear interpolation of the Q values for any face is (for a 3D space) bary[0]*Q[0] + bary[1]*Q[1] + bary[2]*Q[2], where the indices are taken to run over the vertices of that face. Thus we can calculate the interpolated values Q_entry and Q_exit. Further linear interpolation along the path between entry and exit is straightforward.
+        /* For each cell we have 2 data structures which give information about
+         * respectively the entry and exit points of the ray, including the
+         * barycentric coordinates of the intersection point between the ray
+         * and the appropriate face of the cell. (If we follow rays in 3D space
+         * then the cells will be tetrahedra and the faces triangles.) If we
+         * know the value of a quantity Q for each of the vertices, then the
+         * linear interpolation of the Q values for any face is (for a 3D
+         * space) bary[0]*Q[0] + bary[1]*Q[1] + bary[2]*Q[2], where the indices
+         * are taken to run over the vertices of that face. Thus we can
+         * calculate the interpolated values Q_entry and Q_exit. Further linear
+         * interpolation along the path between entry and exit is
+         * straightforward.
         */
 
         dci = chainOfCellIds[ci];
@@ -727,19 +900,27 @@ traceray_smooth(rayData ray, const int im\
             }
         }
 
-        /* Calculate, for each of the 3 vertices of the exit face, the displacement components in the direction of 'dir'. *** NOTE *** that if all the rays are parallel, we could precalculate these for all the vertices.
+        /* Calculate, for each of the 3 vertices of the exit face, the
+         * displacement components in the direction of 'dir'. *** NOTE *** that
+         * if all the rays are parallel, we could precalculate these for all
+         * the vertices.
         */
         for(vi=0;vi<nVertPerFace;vi++)
             xCmpntsRay[vi] = dotProduct3D(dir, gp[gis[exitI][vi]].x);
 
-        /* Calculate the values (via linear interpolation) of necessary grid quantities for the exit point to the cell:
+        /* Calculate the values (via linear interpolation) of necessary grid
+         * quantities for the exit point to the cell:
         */
         doBaryInterp(cellExitIntcpts[ci], gp, xCmpntsRay, gis[exitI]\
                 , md, par->nSpecies, &gips[exitI]);
 
         if(img[im].doline && img[im].doInterpolateVels){
             /*
-               Calculate the values (via 2nd-order interpolation) of the systemic velocity for three points: the entry point to the cell, the exit point, and the point half-way between. (There is a fair bit of setting up to do before the actual call to doBaryInterpsVel).
+               Calculate the values (via 2nd-order interpolation) of the
+               systemic velocity for three points: the entry point to the cell,
+               the exit point, and the point half-way between. (There is a fair
+               bit of setting up to do before the actual call to
+               doBaryInterpsVel).
 
                First lot of setups: copying over the 4 vertex and the 6 mid-edge velocities.
                */
@@ -754,7 +935,8 @@ traceray_smooth(rayData ray, const int im\
                 /* Find index of gi0 neighbours which points to gi1: */
                 neighNotFound = 1; /* default */
                 for(k=0;k<gp[gi0].numNeigh;k++){
-                    if(gp[gi0].neigh[k]->id==(int)gi1){ /* **** eventually change id to unsigned long! *** */
+                    /* **** eventually change id to unsigned long! *** */
+                    if(gp[gi0].neigh[k]->id==(int)gi1){
                         neighNotFound = 0;
                         break;
                     }
@@ -764,13 +946,33 @@ traceray_smooth(rayData ray, const int im\
                     exit(1);
                 }
                 for(di=0;di<DIM;di++)
-                    (*ptrToBuff).edgeVels[ei][di] = gp[gi0].v2[3*k+di]; /* v2 is currently the mid-edge velocity. This is not very robust: should change it to allow a variable (but odd) number of velocity samples per edge, then pick the N_VEL_SEG_PER_HALFth. */
+                    /* v2 is currently the mid-edge velocity. This is not very
+                     * robust: should change it to allow a variable (but odd)
+                     * number of velocity samples per edge, then pick the
+                     * N_VEL_SEG_PER_HALFth. */
+                    (*ptrToBuff).edgeVels[ei][di] = gp[gi0].v2[3*k+di];
             }
 
             /*
-               More setups. Now we want to populate the barycentric coords of the entry and exit points to the cell. We need 4 values for each, because what we want is cell-specific (CS) BC. What we have calculated already are face-specific (FS) BC which omit the zero-valued BC for the vertex opposite the intersected face. To copy the 3 FS values to the array of 4 CS, we keep the order (since the order of the FS ones is the same as the order of vertices in dc[dci].vertx, which is what we want, just with the vertex opposite the intersected face omitted), just inserting 0 for the vertex opposite the intersected face.
+               More setups. Now we want to populate the barycentric coords of
+               the entry and exit points to the cell. We need 4 values for
+               each, because what we want is cell-specific (CS) BC. What we
+               have calculated already are face-specific (FS) BC which omit the
+               zero-valued BC for the vertex opposite the intersected face. To
+               copy the 3 FS values to the array of 4 CS, we keep the order
+               (since the order of the FS ones is the same as the order of
+               vertices in dc[dci].vertx, which is what we want, just with the
+               vertex opposite the intersected face omitted), just inserting 0
+               for the vertex opposite the intersected face.
 
-               However! While this works fine all the time for the exit intercepts, and for cell ci==0 for the entry intercept, for cells ci>0 we need the FS entry BC for the cell, which to be sure are the same values as the FS exit BC of the previous cell; but the vertex indices are all screwed up, because what we have are indices appropriate to cell ci-1 but we need them for cell ci. To remedy all this we have pre-calculated a key to the old cell indices from the new.
+               However! While this works fine all the time for the exit
+               intercepts, and for cell ci==0 for the entry intercept, for
+               cells ci>0 we need the FS entry BC for the cell, which to be
+               sure are the same values as the FS exit BC of the previous cell;
+               but the vertex indices are all screwed up, because what we have
+               are indices appropriate to cell ci-1 but we need them for cell
+               ci. To remedy all this we have pre-calculated a key to the old
+               cell indices from the new.
                */
             if(ci==0){
                 vvi = 0;
@@ -824,17 +1026,54 @@ traceray_smooth(rayData ray, const int im\
                 projRayVels[i] = dotProduct3D(dir, rayVels[i]);
 
             /*
-               We're going to calculate the line amplitude increment per segment for the 2nd-order interpolation scheme as follows. We have 3 values of projRayVels across the path the ray takes through the cell: one at cell entry, one at cell exit and the third at the half-way point. This quantity is the scalar projected value of velocity in the ray direction. Since these values were obtained via a 2nd-order interpolation within the cell, we may use them to derive 2nd-order interpolated values along the ray path, and be certain that these values are the same as we would have obtained if we had done the full 2nd-order interpolation within the cell, using the vertex and edge values etc. A quadratic is a quadratic, right? So these 3 projRayVels values are kind of shorthand for the full cell data. Anyway, we are going to break this ray path up into equal-width segments. Within each segment, we will approximate variation of the projected velocity by a linear function of distance, which allows us to express the line amplitude integral within this segment by an error function. But which linear function? The slope is easy, it will be the same as the 1st derivative of the vel quadratic across the whole in-cell path. In fact for the erf lookup we just need the start and end values of proj vel. We can (and do) get projected velocities at the beginning and end of each segment. The best linear function though is offset vertically, such that the integrated square of the difference between the 'true' 2nd-order function and this 1st-order function that we assume so we can use erfs is as small as possible. This occurs when the start and end proj vel values at the start and end of the segment are offset by -y"*x^2/6, where y" is the 2nd derivative and x is the segment length fraction.
+               We're going to calculate the line amplitude increment per
+               segment for the 2nd-order interpolation scheme as follows. We
+               have 3 values of projRayVels across the path the ray takes
+               through the cell: one at cell entry, one at cell exit and the
+               third at the half-way point. This quantity is the scalar
+               projected value of velocity in the ray direction. Since these
+               values were obtained via a 2nd-order interpolation within the
+               cell, we may use them to derive 2nd-order interpolated values
+               along the ray path, and be certain that these values are the
+               same as we would have obtained if we had done the full 2nd-order
+               interpolation within the cell, using the vertex and edge values
+               etc. A quadratic is a quadratic, right? So these 3 projRayVels
+               values are kind of shorthand for the full cell data. Anyway, we
+               are going to break this ray path up into equal-width segments.
+               Within each segment, we will approximate variation of the
+               projected velocity by a linear function of distance, which
+               allows us to express the line amplitude integral within this
+               segment by an error function. But which linear function? The
+               slope is easy, it will be the same as the 1st derivative of the
+               vel quadratic across the whole in-cell path. In fact for the erf
+               lookup we just need the start and end values of proj vel. We can
+               (and do) get projected velocities at the beginning and end of
+               each segment. The best linear function though is offset
+               vertically, such that the integrated square of the difference
+               between the 'true' 2nd-order function and this 1st-order
+               function that we assume so we can use erfs is as small as
+               possible. This occurs when the start and end proj vel values at
+               the start and end of the segment are offset by -y"*x^2/6, where
+               y" is the 2nd derivative and x is the segment length fraction.
                */
 
             projVelOld = doSegmentInterpScalar(projRayVels, 0);
-            projVel2ndDeriv = (projRayVels[0] + projRayVels[1] - 2.0*projRayVels[2])*4.0; /* The times 4 is actually a divide by deltaX^2, because in this case deltaX is nominally 0.5, i.e. half-way across the path through the cell. */
+            projVel2ndDeriv = (projRayVels[0] + projRayVels[1] - 2.0*projRayVels[2])*4.0; 
+            /* The times 4 is actually a divide by deltaX^2, because in this
+             * case deltaX is nominally 0.5, i.e. half-way across the path
+             * through the cell. */
             projVelOffset = -projVel2ndDeriv*oneOnNumSegments*oneOnNumSegments/6.0;
         } /* end if(img[im].doline) && img[im].doInterpolateVels */
 
-        /* At this point we have interpolated all the values of interest to both the entry and exit points of the cell. Now we break the path between entry and exit into several segments and calculate all these values at the midpoint of each segment.
+        /* At this point we have interpolated all the values of interest to
+         * both the entry and exit points of the cell. Now we break the path
+         * between entry and exit into several segments and calculate all these
+         * values at the midpoint of each segment.
 
-           At the moment I will fix the number of segments, but it might possibly be faster to rather have a fixed segment length (in barycentric coordinates) and vary the number depending on how many of these lengths fit in the path between entry and exit.
+           At the moment I will fix the number of segments, but it might
+           possibly be faster to rather have a fixed segment length (in
+           barycentric coordinates) and vary the number depending on how many
+           of these lengths fit in the path between entry and exit.
            */
         ds = (gips[exitI].xCmpntRay - gips[entryI].xCmpntRay)*oneOnNumSegments;
 
@@ -857,7 +1096,12 @@ traceray_smooth(rayData ray, const int im\
                     ray.tau[stokesId]+=dtau; //**** But this will be the same for I, Q or U.
                 }
             } else {
-                /* It appears to be necessary to sample the velocity function in the following way rather than interpolating it from the vertices of the Delaunay cell in the same way as with all the other quantities of interest. Velocity varies too much across the cells, and in a nonlinear way, for linear interpolation to yield a totally satisfactory result.
+                /* It appears to be necessary to sample the velocity function
+                 * in the following way rather than interpolating it from the
+                 * vertices of the Delaunay cell in the same way as with all
+                 * the other quantities of interest. Velocity varies too much
+                 * across the cells, and in a nonlinear way, for linear
+                 * interpolation to yield a totally satisfactory result.
                 */
                 if(img[im].doline){
                     if(img[im].doInterpolateVels){
@@ -877,14 +1121,17 @@ traceray_smooth(rayData ray, const int im\
                 for(ichan=0;ichan<img[im].nchan;ichan++){
                     jnu = contJnu;
                     alpha = contAlpha;
-                    vThisChan=(ichan-(img[im].nchan-1)*0.5)*img[im].velres; /* Consistent with the WCS definition in writefits(). */
+                    /* Consistent with the WCS definition in writefits(). */
+                    vThisChan=(ichan-(img[im].nchan-1)*0.5)*img[im].velres;
 
                     if(img[im].doline){
                         for(molI=0;molI<par->nSpecies;molI++){
                             for(lineI=0;lineI<md[molI].nline;lineI++){
                                 if(md[molI].freq[lineI] > img[im].freq-img[im].bandwidth*0.5\
                                         && md[molI].freq[lineI] < img[im].freq+img[im].bandwidth*0.5){
-                                    /* Calculate the red shift of the transition wrt to the frequency specified for the image.
+                                    /* Calculate the red shift of the
+                                     * transition wrt to the frequency
+                                     * specified for the image.
                                     */
                                     if(img[im].trans > -1){
                                         lineRedShift=(md[molI].freq[img[im].trans]-md[molI].freq[lineI])/md[molI].freq[img[im].trans]*CLIGHT;
@@ -893,14 +1140,34 @@ traceray_smooth(rayData ray, const int im\
                                     }
 
                                     deltav = vThisChan - img[im].source_vel - lineRedShift;
-                                    /* Line centre occurs when deltav = the recession velocity of the radiating material. Explanation of the signs of the 2nd and 3rd terms on the RHS: (i) A bulk source velocity (which is defined as >0 for the receding direction) should be added to the material velocity field; this is equivalent to subtracting it from deltav, as here. (ii) A positive value of lineRedShift means the line is red-shifted wrt to the frequency specified for the image. The effect is the same as if the line and image frequencies were the same, but the bulk recession velocity were higher. lineRedShift should thus be added to the recession velocity, which is equivalent to subtracting it from deltav, as here. */
+                                    /* Line centre occurs when deltav = the
+                                     * recession velocity of the radiating
+                                     * material. Explanation of the signs of
+                                     * the 2nd and 3rd terms on the RHS: (i) A
+                                     * bulk source velocity (which is defined
+                                     * as >0 for the receding direction) should
+                                     * be added to the material velocity field;
+                                     * this is equivalent to subtracting it
+                                     * from deltav, as here. (ii) A positive
+                                     * value of lineRedShift means the line is
+                                     * red-shifted wrt to the frequency
+                                     * specified for the image. The effect is
+                                     * the same as if the line and image
+                                     * frequencies were the same, but the bulk
+                                     * recession velocity were higher.
+                                     * lineRedShift should thus be added to the
+                                     * recession velocity, which is equivalent
+                                     * to subtracting it from deltav, as here.
+                                     * */
 
                                     if(img[im].doInterpolateVels)
                                         calcLineAmpErf(projVelOld, projVelNew, gips[2].mol[molI].binv, deltav-projVelOffset, oneOnNumSegments, &vfac);
                                     else
                                         calcLineAmpInterp(projVelRay, gips[2].mol[molI].binv, deltav, &vfac);
 
-                                    /* Increment jnu and alpha for this Voronoi cell by the amounts appropriate to the spectral line.
+                                    /* Increment jnu and alpha for this Voronoi
+                                     * cell by the amounts appropriate to the
+                                     * spectral line.
                                     */
                                     sourceFunc_line(&md[molI], vfac, &(gips[2].mol[molI]), lineI, &jnu, &alpha);
                                 } /* end if within freq range. */
@@ -950,7 +1217,9 @@ locateRayOnImage(double x[2], const double size, const double imgCentreXPixels\
     *yi = floor(x[1]/size + imgCentreYPixels);
     if(*xi<0 || *xi>=img[im].pxls || *yi<0 || *yi>=img[im].pxls){
         isInsideImage = 0;
-        *ppi = 0; /* Under these circumstances it ought never to be accessed, but it is not good to leave it without a value at all. */
+        /* Under these circumstances it ought never to be accessed, but it is
+         * not good to leave it without a value at all. */
+        *ppi = 0; 
     }else{
         isInsideImage = 1;
         *ppi = (unsigned int)(*yi)*(unsigned int)img[im].pxls + (unsigned int)(*xi);
@@ -966,11 +1235,14 @@ assignRayOnImage(double x[2], const double size, const double imgCentreXPixels\
         , const int maxNumRaysPerPixel, rayData *rays, int *numActiveRays){
     /*
        The present function does several things, as follows:
-       - Calculates the image position in pixel coordinates of the proposed ray position specified by x[].
-       - If the proposed ray is inside the image bounds, and the count of rays for that image pixel does not exceed the maximum allowed, the function:
-     * adds 1 to the count of rays for that pixel of the image.
-     * increments *numActiveRays;
-     * stores information for the new ray in rays[*numActiveRays].
+       - Calculates the image position in pixel coordinates of the proposed ray
+         position specified by x[].
+       - If the proposed ray is inside the image
+         bounds, and the count of rays for that image pixel does not exceed the
+         maximum allowed, the function:
+     * adds 1 to the count of rays for that pixel of the image.  increments
+     * *numActiveRays; stores information for the new ray in
+     * rays[*numActiveRays].
 
      Returned information is thus:
      - An updated array img[im].pixel[ppi].numRays.
@@ -985,7 +1257,12 @@ assignRayOnImage(double x[2], const double size, const double imgCentreXPixels\
     isInsideImage = locateRayOnImage(x, size, imgCentreXPixels\
             , imgCentreYPixels, img, im, &xi, &yi, &ppi);
 
-    /* See if we want to keep the ray. For the time being we will include those outside the image bounds, because we need to interpolate between outside-image rays and inside-image ones, but a cleverer algorithm would exclude all but those which are affected by this (i.e. that immediately abut the image bounds). Note that maxNumRaysPerPixel<1 is used to flag that there is no upper limit to the number of rays per pixel.
+    /* See if we want to keep the ray. For the time being we will include those
+     * outside the image bounds, because we need to interpolate between
+     * outside-image rays and inside-image ones, but a cleverer algorithm would
+     * exclude all but those which are affected by this (i.e. that immediately
+     * abut the image bounds). Note that maxNumRaysPerPixel<1 is used to flag
+     * that there is no upper limit to the number of rays per pixel.
     */
     if(!isInsideImage || maxNumRaysPerPixel<1 || img[im].pixel[ppi].numRays<maxNumRaysPerPixel){
         if(isInsideImage)
@@ -1025,7 +1302,8 @@ void calcTriangleBaryCoords(double vertices[3][2], double x, double y, double ba
     vec[0] = x - vertices[2][0];
     vec[1] = y - vertices[2][1];
     det = mat[0][0]*mat[1][1] - mat[0][1]*mat[1][0];
-    /*** We're assuming that the triangle is not pathological, i.e that det!=0. */
+    /*** We're assuming that the triangle is not pathological, i.e that det!=0.
+     * */
     barys[0] = ( mat[1][1]*vec[0] - mat[0][1]*vec[1])/det;
     barys[1] = (-mat[1][0]*vec[0] + mat[0][0]*vec[1])/det;
     barys[2] = 1.0 - barys[0] - barys[1];
@@ -1156,7 +1434,9 @@ get2DCells(rayData *rays, const int numActiveRays, struct simplex **cells2D\
 
                     if(ffi>=(*numCells) && neighbourNotFound){
                         if(!silent){
-                            sprintf(message, "Something weird going on. Cannot find a cell with ID %lu", (unsigned long)(neighbor->id));
+                            sprintf(message,
+                                    "Something weird going on. Cannot find a cell with ID %lu",
+                                    (unsigned long)(neighbor->id));
                             bail_out(message);
                         }
                         exit(1);
@@ -1176,7 +1456,10 @@ get2DCells(rayData *rays, const int numActiveRays, struct simplex **cells2D\
         }
     }
 
-    /* We need to process the list of cells a bit further - calculate their centres, and reset the id values to be the same as the index of the cell in the list. (This last because we are going to construct other lists to indicate which cells have been visited etc.)
+    /* We need to process the list of cells a bit further - calculate their
+     * centres, and reset the id values to be the same as the index of the cell
+     * in the list. (This last because we are going to construct other lists to
+     * indicate which cells have been visited etc.)
     */
     for(dci=0;dci<(*numCells);dci++){
         for(di=0;di<numDims;di++){
@@ -1201,11 +1484,20 @@ void
 raytrace(int im, configInfo *par, struct grid *gp, molData *md\
         , imageInfo *img, double *lamtab, double *kaptab, const int nEntries){
     /*
-       This function constructs an image cube by following sets of rays (at least 1 per image pixel) through the model, solving the radiative transfer equations as appropriate for each ray. The ray locations within each pixel are chosen randomly within the pixel, but the number of rays per pixel is set equal to the number of projected model grid points falling within that pixel, down to a minimum equal to par->alias.
+       This function constructs an image cube by following sets of rays (at
+       least 1 per image pixel) through the model, solving the radiative
+       transfer equations as appropriate for each ray. The ray locations within
+       each pixel are chosen randomly within the pixel, but the number of rays
+       per pixel is set equal to the number of projected model grid points
+       falling within that pixel, down to a minimum equal to par->alias.
 
-       Note that the argument 'md', and the grid element '.mol', are only accessed for line images.
+       Note that the argument 'md', and the grid element '.mol', are only
+       accessed for line images.
        */
-    const int maxNumRaysPerPixel=20; /**** Arbitrary - could make this a global, or an argument. Set it to zero to indicate there is no maximum. */
+
+    /**** Arbitrary - could make this a global, or an argument. Set it to zero
+     * to indicate there is no maximum. */
+    const int maxNumRaysPerPixel=20;
     const double cutoff = par->minScale*1.0e-7;
     const int numFaces=1+DIM,numInterpPoints=3,numSegments=5,minNumRaysForAverage=2;
     const double oneOnNFaces=1.0/(double)numFaces, oneOnNumSegments = 1.0/(double)numSegments;
@@ -1233,7 +1525,8 @@ raytrace(int im, configInfo *par, struct grid *gp, molData *md\
     imgCentreYPixels = img[im].pxls/2.0;
 
     if(img[im].doline){
-        /* The user may have set img.trans/img.molI but not img.freq. If so, we calculate freq now.
+        /* The user may have set img.trans/img.molI but not img.freq. If so, we
+         * calculate freq now.
         */
         if(img[im].trans>-1)
             img[im].freq = md[img[im].molI].freq[img[im].trans];
@@ -1252,9 +1545,28 @@ raytrace(int im, configInfo *par, struct grid *gp, molData *md\
     } /* If not doline, we already have img.freq and nchan by now anyway. */
 
     /*
-       We need to calculate or choose a single value of 'local' CMB flux, also single values (i.e. one of each per grid point) of dust and knu, all corresponding the the nominal image frequency. The sensible thing would seem to be to calculate them afresh for each new image; and for continuum images, this is what in fact has always been done. For line images however local_cmb and the dust/knu values were calculated for the frequency of each spectral line and stored respectively in the molData struct and the struct populations element of struct grid. These multiple values (of dust/knu at least) are required during the main solution kernel of LIME, so for line images at least they were kept until the present point, just so one from their number could be chosen. :-/
+       We need to calculate or choose a single value of 'local' CMB flux, also
+       single values (i.e. one of each per grid point) of dust and knu, all
+       corresponding the the nominal image frequency. The sensible thing would
+       seem to be to calculate them afresh for each new image; and for
+       continuum images, this is what in fact has always been done. For line
+       images however local_cmb and the dust/knu values were calculated for the
+       frequency of each spectral line and stored respectively in the molData
+       struct and the struct populations element of struct grid. These multiple
+       values (of dust/knu at least) are required during the main solution
+       kernel of LIME, so for line images at least they were kept until the
+       present point, just so one from their number could be chosen. :-/
 
-       At the present point in the code, for line images, instead of calculating the 'continuum' values of local_cmb/dust/knu, the algorithm chose the nearest 'line' frequency and calculates the required numbers from that. The intent is to preserve (for the present at least) the former numerical behaviour, while changing the way the information is parcelled out among the variables and structs. I.e. a dedicated 'continuum' pair of dust/knu values is now available for each grid point in addition to the array of spectral line values. This decoupling allows better management of memory and avoids the deceptive use of spectral-line variables for continuum use.
+       At the present point in the code, for line images, instead of
+       calculating the 'continuum' values of local_cmb/dust/knu, the algorithm
+       chose the nearest 'line' frequency and calculates the required numbers
+       from that. The intent is to preserve (for the present at least) the
+       former numerical behaviour, while changing the way the information is
+       parcelled out among the variables and structs. I.e. a dedicated
+       'continuum' pair of dust/knu values is now available for each grid point
+       in addition to the array of spectral line values. This decoupling allows
+       better management of memory and avoids the deceptive use of
+       spectral-line variables for continuum use.
        */
     if(img[im].doline){
         if (img[im].trans>=0){
@@ -1298,13 +1610,29 @@ raytrace(int im, configInfo *par, struct grid *gp, molData *md\
         img[im].pixel[ppi].numRays = 0;
 
     /*
-       The set of rays which we plan to follow have starting points which are defined by the set of (non-sink) grid points, projected onto a plane parallel to the observer's X and Y axes. In addition to these points we will add another tranche located on a circle in this plane with its centre at (X,Y) == (0,0) and radius equal to the model radius. Addition of these circle points seems to be necessary to make qhull behave properly. We choose evenly-spaced points on this circle and choose the spacing such that it is the same as the average nearest-neighbour spacing of the grid points in the outer 1/3 annulus of the circular projected model, assuming the grid points were evenly distributed within the annulus.
+       The set of rays which we plan to follow have starting points which are
+       defined by the set of (non-sink) grid points, projected onto a plane
+       parallel to the observer's X and Y axes. In addition to these points we
+       will add another tranche located on a circle in this plane with its
+       centre at (X,Y) == (0,0) and radius equal to the model radius. Addition
+       of these circle points seems to be necessary to make qhull behave
+       properly. We choose evenly-spaced points on this circle and choose the
+       spacing such that it is the same as the average nearest-neighbour
+       spacing of the grid points in the outer 1/3 annulus of the circular
+       projected model, assuming the grid points were evenly distributed within
+       the annulus.
 
-       How to calculate this distance? Well if we have N points randomly but evenly distributed inside an annulus of radius (2/3 to 1)*R it is not hard to show that the mean NN spacing is G(3/2)*R/sqrt(9*N/5), where G() is the gamma function. In fact G(3/2)=sqrt(pi)/2. This will add about 12*sqrt(pi*N/5) points.
+       How to calculate this distance? Well if we have N points randomly but
+       evenly distributed inside an annulus of radius (2/3 to 1)*R it is not
+       hard to show that the mean NN spacing is G(3/2)*R/sqrt(9*N/5), where G()
+       is the gamma function. In fact G(3/2)=sqrt(pi)/2. This will add about
+       12*sqrt(pi*N/5) points.
        */
     numPointsInAnnulus = 0;
     for(gi=0;gi<par->pIntensity;gi++){
-        /* Note that we are *NOT* rotating the model before doing this projection. The reason is that we just want a rough estimate which avoids the centre, which usually has a concentration of points. */
+        /* Note that we are *NOT* rotating the model before doing this
+         * projection. The reason is that we just want a rough estimate which
+         * avoids the centre, which usually has a concentration of points. */
         rSqu = gp[gi].x[0]*gp[gi].x[0] + gp[gi].x[1]*gp[gi].x[1];
         if(rSqu > (4.0/9.0)*par->radiusSqu) numPointsInAnnulus += 1;
     }
@@ -1315,12 +1643,18 @@ raytrace(int im, configInfo *par, struct grid *gp, molData *md\
         numCircleRays = 0;
     }
 
-    /* The following is the first of the 3 main loops in raytrace. Here we loop over the (internal or non-sink) grid points. We're doing 2 things: loading the rotated, projected coordinates into the rays list, and counting the rays per image pixel.
+    /* The following is the first of the 3 main loops in raytrace. Here we loop
+     * over the (internal or non-sink) grid points. We're doing 2 things:
+     * loading the rotated, projected coordinates into the rays list, and
+     * counting the rays per image pixel.
     */
     rays = malloc(sizeof(rayData)*(par->pIntensity+numCircleRays)); /* We may need to reallocate this later. */
     numActiveRaysInternal = 0;
     for(gi=0;gi<par->pIntensity;gi++){
-        /* Apply the inverse (i.e. transpose) rotation matrix. (We use the inverse matrix here because here we want to rotate grid coordinates to the observer frame, whereas inside traceray() we rotate observer coordinates to the grid frame.)
+        /* Apply the inverse (i.e. transpose) rotation matrix. (We use the
+         * inverse matrix here because here we want to rotate grid coordinates
+         * to the observer frame, whereas inside traceray() we rotate observer
+         * coordinates to the grid frame.)
         */
         for(i=0;i<2;i++){
             xs[i]=0.0;
@@ -1364,7 +1698,10 @@ raytrace(int im, configInfo *par, struct grid *gp, molData *md\
 
         //**** Actually we can figure out the cell geometry from the grid neighbours.
 
-        /* We need to process the list of cells a bit further - calculate their centres, and reset the id values to be the same as the index of the cell in the list. (This last because we are going to construct other lists to indicate which cells have been visited etc.)
+        /* We need to process the list of cells a bit further - calculate their
+         * centres, and reset the id values to be the same as the index of the
+         * cell in the list. (This last because we are going to construct other
+         * lists to indicate which cells have been visited etc.)
         */
         for(dci=0;dci<numCells;dci++){
             for(di=0;di<DIM;di++){
@@ -1383,7 +1720,8 @@ raytrace(int im, configInfo *par, struct grid *gp, molData *md\
         free(dc);
 
         if(img[im].doline && img[im].doInterpolateVels){
-            /* Set up the buffer we will use to store various quantities when doing barycentric interpolation of velocities:
+            /* Set up the buffer we will use to store various quantities when
+             * doing barycentric interpolation of velocities:
             */
             velBuff.numVertices = DIM+1;
             velBuff.numEdges = velBuff.numVertices*(velBuff.numVertices-1)/2;
@@ -1421,13 +1759,18 @@ raytrace(int im, configInfo *par, struct grid *gp, molData *md\
         exit(1);
     }
 
-    /* This is the start of loop 2/3, which loops over the rays. We trace each ray, then load into the image cube those for which the number of rays per pixel exceeds a minimum. The remaining image pixels we handle via an interpolation algorithm in loop 3.
+    /* This is the start of loop 2/3, which loops over the rays. We trace each
+     * ray, then load into the image cube those for which the number of rays
+     * per pixel exceeds a minimum. The remaining image pixels we handle via an
+     * interpolation algorithm in loop 3.
     */
     defaultErrorHandler = gsl_set_error_handler_off();
     /*
-       The GSL documentation does not recommend leaving the error handler at the default within multi-threaded code.
+       The GSL documentation does not recommend leaving the error handler at
+       the default within multi-threaded code.
 
-       While this is off however, gsl_* calls will not exit if they encounter a problem. We may need to pay some attention to trapping their errors.
+       While this is off however, gsl_* calls will not exit if they encounter a
+       problem. We may need to pay some attention to trapping their errors.
        */
 
     omp_set_dynamic(0);
@@ -1503,7 +1846,9 @@ raytrace(int im, configInfo *par, struct grid *gp, molData *md\
         }
     }
 
-    /* We take, in formal terms, all the 'active' or accepted rays on the model-radius circle to be outside the model; thus we set their intensity and tau to zero.
+    /* We take, in formal terms, all the 'active' or accepted rays on the
+     * model-radius circle to be outside the model; thus we set their intensity
+     * and tau to zero.
     */
     for(ri=numActiveRaysInternal;ri<numActiveRays;ri++){
         for(ichan=0;ichan<img[im].nchan;ichan++){
@@ -1512,7 +1857,8 @@ raytrace(int im, configInfo *par, struct grid *gp, molData *md\
         }
     }
 
-    /* For pixels with more than a cutoff number of rays, just average those rays into the pixel:
+    /* For pixels with more than a cutoff number of rays, just average those
+     * rays into the pixel:
     */
     for(ri=0;ri<numActiveRays;ri++){
         if(rays[ri].isInsideImage && img[im].pixel[rays[ri].ppi].numRays >= minNumRaysForAverage){
@@ -1535,7 +1881,10 @@ raytrace(int im, configInfo *par, struct grid *gp, molData *md\
     }
 
     if(numPixelsForInterp>0){
-        /* Now we enter main loop 3/3, in which we loop over image pixels, and for any we need to interpolate, we do so. But first we need to invoke qhull to get a Delaunay triangulation of the projected points.
+        /* Now we enter main loop 3/3, in which we loop over image pixels, and
+         * for any we need to interpolate, we do so. But first we need to
+         * invoke qhull to get a Delaunay triangulation of the projected
+         * points.
         */
         double *grid2DCoords=NULL,rasterStarts[2],rasterDirs[2]={0.0,1.0};
         struct simplex *cells2D=NULL;
@@ -1648,9 +1997,27 @@ raytrace(int im, configInfo *par, struct grid *gp, molData *md\
     /*
        Add and subtract appropriate amounts of cmb.
 
-       Some explanation is probably helpful here to explain what is going on. If we think of a ray at a given frequency passing through the model, the starting value of its intensity I(0) will be the cosmic background value, which in the bands of interest to LIME can be assumed to be the familiar ~2.7K black-body value. This is the value encoded in local_cmb. According to the backwards-propagation algorithm for solving the RTE described in Hogerheijde & van der Tak, Astron. Astrophys. 362, 697 (2000), the final term in the sum giving the intensity is I(0)*exp(-tau), where tau is the accumulated opacity of the model. For rays passing through areas of zero molecular column density (e.g. outside the model radius), the final or total radiation intensity can be assumed to equal I(0). However, LIME users prefer images not have scalar offsets, no matter how faithful to reality the offset is, thus we also subtract away a constant I(0) from the whole image; thus image areas outside the model radius are (in the present function) left at, or returned to, zero, and I(0) (aka local_cmb) is subtracted from all the in-radius pixels after the final RTE addition.
+       Some explanation is probably helpful here to explain what is going on.
+       If we think of a ray at a given frequency passing through the model, the
+       starting value of its intensity I(0) will be the cosmic background
+       value, which in the bands of interest to LIME can be assumed to be the
+       familiar ~2.7K black-body value. This is the value encoded in local_cmb.
+       According to the backwards-propagation algorithm for solving the RTE
+       described in Hogerheijde & van der Tak, Astron. Astrophys. 362, 697
+       (2000), the final term in the sum giving the intensity is
+       I(0)*exp(-tau), where tau is the accumulated opacity of the model. For
+       rays passing through areas of zero molecular column density (e.g.
+       outside the model radius), the final or total radiation intensity can be
+       assumed to equal I(0). However, LIME users prefer images not have scalar
+       offsets, no matter how faithful to reality the offset is, thus we also
+       subtract away a constant I(0) from the whole image; thus image areas
+       outside the model radius are (in the present function) left at, or
+       returned to, zero, and I(0) (aka local_cmb) is subtracted from all the
+       in-radius pixels after the final RTE addition.
 
-       Note further that users also do not like the resulting zero-valued pixels (!), hence the addition of IMG_MIN_ALLOWED done to all such pixels in functions write4Dfits(). Such is life.
+       Note further that users also do not like the resulting zero-valued
+       pixels (!), hence the addition of IMG_MIN_ALLOWED done to all such
+       pixels in functions write4Dfits(). Such is life.
        */
     if(par->polarization){ /* just add cmb to Stokes I, which is the first 'channel' */
         lastChan = 0;
