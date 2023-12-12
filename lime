@@ -4,12 +4,14 @@
 #
 # Copyright (C) 2006-2014 Christian Brinch
 # Copyright (C) 2015-2017 The LIME development team
+# Copyright (C) 2023 mkirc"
 
 export PATHTOLIME=$( cd  -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # load command line arguments
-. "$PATHTOLIME"/lime-opt.sh
+. "$PATHTOLIME"/lime-opt2.sh
 
+# default initialization - optionals
 cpp_flags=""
 verbose="yes"
 do_test="no"
@@ -34,8 +36,9 @@ set_nthreads() {
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${PATHTOLIME}/lib
 export WORKDIR=$PWD
 
-# Compile the code
+# change into lime dir
 pushd ${PATHTOLIME} >> /dev/null
+# Compile the code
 make -s EXTRACPPFLAGS="${cpp_flags}" \
     MODELS=$WORKDIR/"$_arg_model_file" \
     TARGET=$WORKDIR/lime_$$.x \
@@ -44,9 +47,15 @@ make -s EXTRACPPFLAGS="${cpp_flags}" \
     USEHDF5=$usehdf5
 make -s limeclean
 
-# Run the code
+# change into workdir
 popd >> /dev/null
-./lime_$$.x
-[[ -e ./lime_$$.x ]] && rm -rf lime_$$.x
+
+if [[ "$_arg_compile_only" == "off" ]]; then
+    # Run the code
+    ./lime_$$.x
+
+    # remove the executable
+    [[ -e ./lime_$$.x ]] && rm -rf lime_$$.x
+fi
 
 exit 0
