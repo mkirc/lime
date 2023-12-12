@@ -1435,11 +1435,8 @@ readGridExtFromHDF5(hid_t file, struct gridInfoType *gridInfoRead\
      * files from datastage <= 3, in which neither ABUNMOLn, nor DENSMOLn
      * is required to be found.
     */
-    int densmolExists = -1;
     *densMolColsExists = FALSE;
-    /* dset = H5Dopen(dataGroup, "DENSMOL1", H5P_DEFAULT); */
-    densmolExists = H5Lexists(dataGroup, "DENSMOL1", H5P_DEFAULT);
-    if(dset >= 0) {
+    if(H5Lexists(dataGroup, "DENSMOL1", H5P_DEFAULT) > 0) {
         *densMolColsExists = TRUE;
     } else {
         puts("No densmol, must be datastage <= 3");
