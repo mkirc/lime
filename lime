@@ -9,7 +9,7 @@
 export PATHTOLIME=$( cd  -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # load command line arguments
-. "$PATHTOLIME"/lime-opt2.sh
+. "$PATHTOLIME"/lime-opt.sh
 
 # default initialization - optionals
 cpp_flags=""
