@@ -5,7 +5,12 @@ _base_path="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 readonly LIME_DIR=/lime
 readonly DEFS_FILE="$LIME_DIR"/Makefile.defs
 readonly CONFIGURE="$LIME_DIR"/configure
-readonly MODEL_DIR=/model
+
+if [[ -d "$LIME_MODEL_DIR" ]]; then
+    readonly MODEL_DIR="$LIME_MODEL_DIR"
+else
+    readonly MODEL_DIR=/model
+fi
 
 trap cleanup SIGINT
 trap cleanup SIGTERM
