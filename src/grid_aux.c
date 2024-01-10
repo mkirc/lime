@@ -135,6 +135,7 @@ delaunay(const int numDims, struct grid *gp, const unsigned long numPoints\
 
     /* pt_array contains the grid point locations in the format required by qhull.
     */
+    /* puts("malloc'ing grid point locations"); */
     pt_array=malloc(sizeof(coordT)*numDims*numPoints);
     for(ppi=0;ppi<numPoints;ppi++) {
         for(j=0;j<numDims;j++) {
@@ -142,6 +143,7 @@ delaunay(const int numDims, struct grid *gp, const unsigned long numPoints\
         }
     }
 
+    /* puts("running qhull"); */
     /* Run qhull to generate the Delaunay mesh. (After this, all the information of
      * importance is stored in variables defined in the qhull header.)
     */
@@ -156,7 +158,8 @@ delaunay(const int numDims, struct grid *gp, const unsigned long numPoints\
         FORALLfacets {
             if(!facet->upperdelaunay){
                 FOREACHneighbor_(facet) {
-                    if(neighbor->upperdelaunay){ /* This should indicate that facet lies on the edge of the model. */
+                    /*This should indicate that facet lies on the edge of the model.*/
+                    if(neighbor->upperdelaunay){
                         FOREACHvertex_(neighbor->vertices){
                             ppi = (unsigned long)qh_pointid(vertex->point);
                             if(ppi<numPoints)
@@ -167,6 +170,8 @@ delaunay(const int numDims, struct grid *gp, const unsigned long numPoints\
             }
         }
     }
+
+    /* puts("malloc'ing neigh s"); */
 
     /* Malloc .neigh for each grid point. At present it is not known how many neighbours
      * a point will have, so all the mallocs are larger than needed.
@@ -185,7 +190,10 @@ delaunay(const int numDims, struct grid *gp, const unsigned long numPoints\
 
         if(gp[id].numNeigh<=0){
             if(!silent){
-                snprintf(message, STR_LEN_1, "qhull failed silently, grid point %lu has 0 neighbours. Smoother gridDensity() might help.", id);
+                snprintf(message,
+                        STR_LEN_1,
+                        "qhull failed silently, grid point %lu has 0 neighbours. "
+                        "Smoother gridDensity() might help.", id);
                 bail_out(message);
             }
             exit(1);
@@ -303,7 +311,7 @@ delaunay(const int numDims, struct grid *gp, const unsigned long numPoints\
 
 /*....................................................................*/
 unsigned long
-reorderGrid(const unsigned long numPoints, struct grid *gp){
+reorderGrid(unsigned long numPoints, struct grid *gp){
     /*
        The algorithm works its way up the list of points with one index and down with
        another. The 'up' travel stops at the 1st sink point it finds, the 'down' at the
@@ -313,8 +321,10 @@ reorderGrid(const unsigned long numPoints, struct grid *gp){
        ordered list of indices and perform the swaps on that as well.
        */
 
-    unsigned long indices[numPoints],upI,dnI,nExtraSinks=0,i,ngi;
-    int j;
+    /* int indices[numPoints]; */
+    int *indices = malloc(numPoints * sizeof(int));
+
+    int upI,dnI,nExtraSinks=0,i,j,ngi;
     struct grid tempGp;
 
     for(upI=0;upI<numPoints;upI++) indices[upI] = upI;
@@ -358,11 +368,13 @@ reorderGrid(const unsigned long numPoints, struct grid *gp){
        */
     for(i=0;i<numPoints;i++){
         for(j=0;j<gp[i].numNeigh;j++){
-            ngi = (unsigned long)gp[i].neigh[j]->id;
+            ngi = gp[i].neigh[j]->id;
             if(ngi != indices[ngi])
                 gp[i].neigh[j] = &gp[indices[ngi]];
         }
     }
+
+    free(indices);
 
     return nExtraSinks;
 }
